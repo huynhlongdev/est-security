@@ -33,6 +33,16 @@ class EST_Security_Setting
             update_option('est_max_attempts', 5);
             update_option('est_lockout_time', 300);
 
+            // Auto change password
+            update_option('est_enable_auto_change', 1);
+            update_option('est_auto_change_interval', 'monthly');
+
+            // sử dụng captcha
+            update_option('est_recaptcha_version', 'v2');
+            update_option('est_recaptcha_enabled', 0);
+            update_option('est_recaptcha_site_key', '');
+            update_option('est_recaptcha_secret_key', '');
+
             new Generate_File();
 
             $this->set_after_active_plugin = true;
@@ -76,10 +86,19 @@ class EST_Security_Setting
         $custom_slug = preg_replace('/[^a-zA-Z0-9\-]/', '', $custom_slug);
         update_option('est_custom_login_slug', $custom_slug);
 
+        // reCAPTCHA
+        update_option('est_recaptcha_version', isset($_POST['est_recaptcha_version']) ? sanitize_text_field($_POST['est_recaptcha_site_key']) : 'v2');
+        update_option('est_recaptcha_enabled', isset($_POST['est_recaptcha_enabled']) ? 1 : 0);
+        update_option('est_recaptcha_site_key', isset($_POST['est_recaptcha_site_key']) ? sanitize_text_field($_POST['est_recaptcha_site_key']) : '');
+        update_option('est_recaptcha_secret_key', isset($_POST['est_recaptcha_secret_key']) ? sanitize_text_field($_POST['est_recaptcha_secret_key']) : '');
+
         // Lockout
         update_option('est_user_lockout', isset($_POST['est_user_lockout']) ? 1 : 0);
         update_option('est_lockout_time', isset($_POST['est_lockout_time']) ? intval($_POST['est_lockout_time']) : 300);
         update_option('est_max_attempts', isset($_POST['est_max_attempts']) ? intval($_POST['est_max_attempts']) : 5);
+
+        update_option('est_enable_auto_change', isset($_POST['est_enable_auto_change']) ? 1 : 0);
+        update_option('est_auto_change_interval', isset($_POST['est_auto_change_interval']) ? $_POST['est_auto_change_interval'] : 'monthly');
 
         // Redirect để tránh post lại
         wp_safe_redirect(admin_url('admin.php?page=enosta-security-config&saved=1'));

@@ -10,7 +10,7 @@ class Security_Audit_Log_DB
     public function __construct()
     {
         global $wpdb;
-        $this->table = $wpdb->prefix . 'security_audit_log';
+        $this->table = $wpdb->prefix . 'est_security_audit_log';
 
         // Hooks ghi log
         add_action('activated_plugin', [$this, 'log_plugin_activated']);

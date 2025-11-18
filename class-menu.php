@@ -5,6 +5,7 @@ class EST_Menu
 {
     private $table_audit;
     private $table_lockout;
+    private $table_lockout_ip;
     private $per_page = 20;
     private $base_dir;
     private $upload_directory;
@@ -13,8 +14,9 @@ class EST_Menu
     public function __construct()
     {
         global $wpdb;
-        $this->table_audit = $wpdb->prefix . 'security_audit_log';
-        $this->table_lockout = $wpdb->prefix . 'login_lockout';
+        $this->table_audit = $wpdb->prefix . 'est_security_audit_log';
+        $this->table_lockout = $wpdb->prefix . 'est_security_login_lockout';
+        $this->table_lockout_ip = $wpdb->prefix . 'est_security_login_lockout_ip';
         $this->upload_directory = wp_upload_dir();
         $this->base_dir = $this->upload_directory['basedir'];
         add_action('admin_menu', [$this, 'admin_menu']);
@@ -22,7 +24,7 @@ class EST_Menu
 
     public function admin_menu()
     {
-        add_menu_page('Security', 'Security', 'manage_options', 'enosta-security', [$this, 'admin_page'], 'dashicons-shield', 61);
+        add_menu_page('EST Security', 'EST Security', 'manage_options', 'enosta-security', [$this, 'admin_page'], 'dashicons-shield', 61);
 
         add_submenu_page(
             'enosta-security',               // Slug menu cha
@@ -69,15 +71,15 @@ class EST_Menu
             [$this, 'page_config']
         );
 
-        add_menu_page(
-            'Security Settings',
-            'ENOSTA Security',
-            'manage_options',
-            'custom-security-settings',
-            [$this, 'security_admin_page'],
-            'dashicons-shield-alt',
-            80
-        );
+        // add_menu_page(
+        //     'Security Settings',
+        //     'ENOSTA Security',
+        //     'manage_options',
+        //     'custom-security-settings',
+        //     [$this, 'security_admin_page'],
+        //     'dashicons-shield-alt',
+        //     80
+        // );
     }
 
 
@@ -115,6 +117,7 @@ class EST_Menu
     {
         global $wpdb;
         $users = $wpdb->get_results("SELECT * FROM {$this->table_lockout} ORDER BY last_attempt DESC", ARRAY_A);
+        $lockout_ips = $wpdb->get_results("SELECT * FROM {$this->table_lockout_ip} ORDER BY last_attempt DESC", ARRAY_A);
 ?>
         <div class="wrap">
             <h1>Locked Users</h1>
@@ -145,6 +148,40 @@ class EST_Menu
                     <?php if (empty($users)) : ?>
                         <tr>
                             <td colspan="4">No locked users</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+
+            <h1>Locked IP</h1>
+            <table class="widefat fixed">
+                <thead>
+                    <tr>
+                        <th>IP</th>
+                        <th>Attempts</th>
+                        <th>Last Attempt</th>
+                        <th>Block</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($lockout_ips as $block) : ?>
+                        <tr>
+                            <td><?php echo esc_html($block['ip_address']); ?></td>
+                            <td><?php echo esc_html($block['attempts']); ?></td>
+                            <td><?php echo date('Y-m-d H:i:s', $block['last_attempt']); ?></td>
+                            <td>
+                                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+                                    <input type="hidden" name="action" value="unlock_user">
+                                    <input type="hidden" name="user_login" value="<?php //echo esc_attr($block['user_login']); 
+                                                                                    ?>">
+                                    <?php submit_button('Unlock', 'secondary small', 'submit', false); ?>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    <?php if (empty($lockout_ips)) : ?>
+                        <tr>
+                            <td colspan="4">No locked ip</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>

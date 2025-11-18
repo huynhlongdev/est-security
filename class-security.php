@@ -15,6 +15,7 @@ class EST_Security
     ];
     private $option_name = 'wp_shc_options';
     private $options = [];
+    private $file_editing;
 
     public function __construct()
     {
@@ -24,9 +25,12 @@ class EST_Security
         $this->options = get_option($this->option_name, []);
         $this->options = wp_parse_args($this->options, $this->defaults);
         register_setting($this->option_name, $this->option_name, [$this, 'sanitize_options']);
+        $this->file_editing = get_option('est_disable_file_editing', 1);
 
         // disable file editor
-        if (!defined('DISALLOW_FILE_EDIT')) define('DISALLOW_FILE_EDIT', true);
+        if ($this->file_editing == 1) {
+            if (!defined('DISALLOW_FILE_EDIT')) define('DISALLOW_FILE_EDIT', true);
+        }
 
         // add security on headers
         if (!is_admin() && !wp_doing_ajax() && get_option('est_prevent_site_display_inside_frame', 1) == 1) {
@@ -43,7 +47,6 @@ class EST_Security
             add_filter('xmlrpc_enabled', '__return_false');
         }
 
-
         /** Disable REST API */
         if ($this->options['disable_rest']) {
             add_filter('rest_authentication_errors', array($this, 'disable_rest_api'));
@@ -53,7 +56,6 @@ class EST_Security
         /** Remove files */
         add_action('wp_ajax_delete_php_files_ajax', array($this, 'delete_php_files_ajax'));
         add_action('wp_ajax_remove_log', array($this, 'delete_log'));
-
         add_action('parse_request', [$this, 'block_sqli_patterns'], 1);
 
         // Hook vào admin
@@ -105,13 +107,23 @@ class EST_Security
     // Thêm header cho request
     function set_header()
     {
+        $recaptcha = '';
+        $site_key        = get_option('est_recaptcha_site_key', '');
+        $secret_key      = get_option('est_recaptcha_secret_key', '');
+        $recaptcha_enabled = get_option('est_recaptcha_enabled', 0);
+
+        if ($recaptcha_enabled == 1 && !empty($site_key) && !empty($secret_key)) {
+            $recaptcha = ' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ ';
+        }
+
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-            "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com",
+            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com {$recaptcha}",
+            "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com {$recaptcha}",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' https://fonts.gstatic.com",
-            "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com",
+            "frame-src {$recaptcha}",
+            "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com {$recaptcha}",
         ];
 
         $headers = [

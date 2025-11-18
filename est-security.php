@@ -9,6 +9,8 @@ Author: Long Huynh
 define('EST_SECURITY_VERSION', '1.0.0');
 define('EST_SECURITY_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
+require_once EST_SECURITY_PLUGIN_DIR . 'class-security-helpers.php';
+
 // if (is_admin()) {
 require_once EST_SECURITY_PLUGIN_DIR . 'class-security.php';
 
@@ -16,12 +18,14 @@ require_once EST_SECURITY_PLUGIN_DIR . 'class-menu.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-hide-login.php';
 // }
 require_once EST_SECURITY_PLUGIN_DIR . 'class-setting.php';
-
+require_once EST_SECURITY_PLUGIN_DIR . 'class-password.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-malware-scan.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-generate.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-audit_log.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-login-lockout.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-prefix-db.php';
+require_once EST_SECURITY_PLUGIN_DIR . 'class-two-factor.php';
+require_once EST_SECURITY_PLUGIN_DIR . 'class-recaptcha.php';
 
 register_activation_hook(__FILE__, function () {
     new Generate_File();

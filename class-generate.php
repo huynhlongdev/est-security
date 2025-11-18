@@ -29,7 +29,6 @@ class Generate_File
         $root_ht_file = ABSPATH . '.htaccess';
         if (!is_writable($root_ht_file)) {
             @chmod($root_ht_file, 0644);
-            error_log(print_r('mở tạm 0644', true));
         }
 
         $default_wp_block = <<<WP

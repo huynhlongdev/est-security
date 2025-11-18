@@ -4,6 +4,7 @@ if (!defined('ABSPATH')) exit;
 class WP_Login_Lockout
 {
     private $table;
+    private $ip_table;
     private $enabled;
     private $max_attempts;
     private $lockout_time;
@@ -12,10 +13,10 @@ class WP_Login_Lockout
     public function __construct()
     {
         global $wpdb;
-        $this->table = $wpdb->prefix . 'security_login_lockout';
-        $this->enabled = get_option('est_user_lockout', 0); // 1 = enabled
+        $this->table = $wpdb->prefix . 'est_security_login_lockout';
+        $this->ip_table = $wpdb->prefix . 'est_security_login_lockout_ip';
+        $this->enabled = get_option('est_user_lockout', 0);
         $this->max_attempts = intval(get_option('est_max_attempts', 3));
-        // store est_lockout_time as minutes. Default = 5 minutes
         $this->lockout_time = intval(get_option('est_lockout_time', 5)) * 60;
 
         // If disabled, do nothing
@@ -30,6 +31,7 @@ class WP_Login_Lockout
 
         // Admin menu
         add_action('admin_post_unlock_user', [$this, 'unlock_user']);
+        add_action('admin_post_unlock_ip', [$this, 'unlock_ip']);
     }
 
     public function create_table()
@@ -46,6 +48,23 @@ class WP_Login_Lockout
                 last_attempt INT(11) DEFAULT 0,
                 PRIMARY KEY  (id),
                 UNIQUE KEY user_login (user_login)
+            ) $charset_collate;";
+
+            require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+            dbDelta($sql);
+        }
+
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$this->ip_table}'") !== $this->ip_table) {
+            $charset_collate = $wpdb->get_charset_collate();
+
+            $sql = "CREATE TABLE IF NOT EXISTS {$this->ip_table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                ip_address VARCHAR(45) NOT NULL,
+                attempts INT(11) DEFAULT 0,
+                last_attempt INT(11) DEFAULT 0,
+                locked_until INT(11) DEFAULT 0,
+                PRIMARY KEY  (id),
+                UNIQUE KEY ip_address (ip_address)
             ) $charset_collate;";
 
             require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -98,6 +117,13 @@ class WP_Login_Lockout
 
         $this->update_user_data($username, $attempts, $last_attempt);
 
+        // Track by IP address
+        $ip = $this->get_client_ip();
+        $this->record_ip_attempt($ip);
+
+        // Log the failed attempt
+        $this->log_failed_login($username, $ip);
+
         $attempts_left = $this->max_attempts - $attempts;
         $key = 'login_attempts_msg_' . md5(strtolower($username));
 
@@ -115,17 +141,125 @@ class WP_Login_Lockout
         }
     }
 
+    private function get_client_ip()
+    {
+        return EST_Security_Helpers::get_client_ip();
+    }
+
+    private function record_ip_attempt($ip)
+    {
+        global $wpdb;
+        $now = time();
+
+        $ip_data = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$this->ip_table} WHERE ip_address = %s", $ip),
+            ARRAY_A
+        );
+
+        if ($ip_data) {
+            $attempts = intval($ip_data['attempts']) + 1;
+            $locked_until = 0;
+
+            if ($attempts >= $this->max_attempts) {
+                $locked_until = $now + $this->lockout_time;
+            }
+
+            $wpdb->update(
+                $this->ip_table,
+                [
+                    'attempts' => $attempts,
+                    'last_attempt' => $now,
+                    'locked_until' => $locked_until
+                ],
+                ['ip_address' => $ip],
+                ['%d', '%d', '%d'],
+                ['%s']
+            );
+        } else {
+            $wpdb->insert(
+                $this->ip_table,
+                [
+                    'ip_address' => $ip,
+                    'attempts' => 1,
+                    'last_attempt' => $now,
+                    'locked_until' => 0
+                ],
+                ['%s', '%d', '%d', '%d']
+            );
+        }
+    }
+
+    private function log_failed_login($username, $ip)
+    {
+        if (class_exists('Security_Audit_Log_DB')) {
+            global $wpdb;
+            $table = $wpdb->prefix . 'est_security_audit_log';
+
+            $wpdb->insert(
+                $table,
+                [
+                    'user_login' => sanitize_text_field($username),
+                    'ip_address' => sanitize_text_field($ip),
+                    'action_type' => 'failed_login',
+                    'action_detail' => sprintf('Failed login attempt for username: %s', $username),
+                    'created_at' => current_time('mysql')
+                ]
+            );
+        }
+    }
+
     public function login_success($user_login, $user)
     {
         global $wpdb;
+        // Reset username lockout
         $wpdb->delete($this->table, ['user_login' => strtolower($user_login)], ['%s']);
         delete_transient('login_attempts_msg_' . md5(strtolower($user_login)));
+
+        // Reset IP lockout on successful login
+        $ip = $this->get_client_ip();
+        $wpdb->update(
+            $this->ip_table,
+            ['attempts' => 0, 'locked_until' => 0],
+            ['ip_address' => $ip],
+            ['%d', '%d'],
+            ['%s']
+        );
+
+        // Log successful login
+        $this->log_successful_login($user_login, $ip);
+    }
+
+    private function log_successful_login($username, $ip)
+    {
+        if (class_exists('Security_Audit_Log_DB')) {
+            global $wpdb;
+            $table = $wpdb->prefix . 'est_security_audit_log';
+
+            $wpdb->insert(
+                $table,
+                [
+                    'user_login' => sanitize_text_field($username),
+                    'ip_address' => sanitize_text_field($ip),
+                    'action_type' => 'successful_login',
+                    'action_detail' => sprintf('Successful login for username: %s', $username),
+                    'created_at' => current_time('mysql')
+                ]
+            );
+        }
     }
 
     public function check_lockout($user, $username, $password)
     {
         if (empty($username)) return $user;
 
+        // Check IP lockout first
+        $ip = $this->get_client_ip();
+        $ip_locked = $this->check_ip_lockout($ip);
+        if ($ip_locked) {
+            return $ip_locked;
+        }
+
+        // Check username lockout
         $user_data = $this->get_user_data($username);
 
         if ($user_data) {
@@ -149,6 +283,39 @@ class WP_Login_Lockout
         return $user;
     }
 
+    private function check_ip_lockout($ip)
+    {
+        global $wpdb;
+        $ip_data = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$this->ip_table} WHERE ip_address = %s", $ip),
+            ARRAY_A
+        );
+
+        if ($ip_data) {
+            $locked_until = intval($ip_data['locked_until']);
+            $now = time();
+
+            if ($locked_until > $now) {
+                $remaining = $locked_until - $now;
+                return new WP_Error(
+                    'ip_locked',
+                    sprintf('Your IP address is temporarily blocked. Please try again in %d minutes.', ceil($remaining / 60))
+                );
+            } elseif ($locked_until > 0 && $locked_until <= $now) {
+                // Reset after lockout period
+                $wpdb->update(
+                    $this->ip_table,
+                    ['attempts' => 0, 'locked_until' => 0],
+                    ['ip_address' => $ip],
+                    ['%d', '%d'],
+                    ['%s']
+                );
+            }
+        }
+
+        return false;
+    }
+
     // Unlock user
     public function unlock_user()
     {
@@ -161,6 +328,29 @@ class WP_Login_Lockout
         $wpdb->delete($this->table, ['user_login' => strtolower($user_login)], ['%s']);
 
         wp_redirect(admin_url('admin.php?page=login-lockout'));
+        exit;
+    }
+
+    // Unlock IP
+    public function unlock_ip()
+    {
+        if (!current_user_can('manage_options') || !isset($_POST['ip_address'])) {
+            wp_die('Unauthorized');
+        }
+
+        check_admin_referer('unlock_ip');
+
+        global $wpdb;
+        $ip = sanitize_text_field($_POST['ip_address']);
+        $wpdb->update(
+            $this->ip_table,
+            ['attempts' => 0, 'locked_until' => 0],
+            ['ip_address' => $ip],
+            ['%d', '%d'],
+            ['%s']
+        );
+
+        wp_redirect(admin_url('admin.php?page=login-lockout&ip_unlocked=1'));
         exit;
     }
 
@@ -177,30 +367,44 @@ class WP_Login_Lockout
             return esc_html($msg);
         }
 
+        // Prevent username enumeration - generic error message
+        if (
+            strpos($error, 'Invalid username') !== false ||
+            strpos($error, 'Unknown username') !== false ||
+            strpos($error, 'incorrect username') !== false
+        ) {
+            return __('Invalid username or password.', 'est-security');
+        }
+
         // Nếu không có thông báo custom thì hiển thị chung chung
-        return __('Invalid username or password.', 'text-domain');
+        return __('Invalid username or password.', 'est-security');
     }
 }
 
 new WP_Login_Lockout();
 
-// Optional: display transient messages above login form
-add_action('login_notices', function () {
-    if (!isset($_POST['log'])) return;
-    $username = sanitize_text_field($_POST['log']);
-    $msg = get_transient('login_attempts_msg_' . md5(strtolower($username)));
-    if ($msg) {
-        echo '<div class="notice notice-error"><p>' . esc_html($msg) . '</p></div>';
-        delete_transient('login_attempts_msg_' . md5(strtolower($username)));
+
+add_filter('authenticate', function ($user, $username, $password) {
+
+    // check ip
+    $current_ip = EST_Security_Helpers::get_client_ip();
+    error_log(print_r($current_ip, true));
+    global $wpdb;
+    $table_ip = $wpdb->prefix . 'est_security_login_lockout_ip';
+    $ip_data = $wpdb->get_row(
+        $wpdb->prepare("SELECT * FROM `{$table_ip}` WHERE ip_address = %s", $current_ip),
+        ARRAY_A
+    );
+
+    if (!empty($ip_data)) {
+        if ($ip_data['locked_until'] != 0) {
+            wp_clear_auth_cookie();
+            nocache_headers();
+            $url =  home_url('/');
+            header('Location: ' . $url);
+            exit;
+        }
     }
-});
 
-// register_activation_hook(WP_PLUGIN_DIR  . '/est-security/est-security.php', function () {
-//     $lockout = new WP_Login_Lockout();
-//     $lockout->create_table();
-//     error_log('active plugin');
-// });
-
-// register_deactivation_hook(WP_PLUGIN_DIR  . '/est-security/est-security.php', function () {
-//     error_log('deactive plugin');
-// });
+    return $user;
+}, 20, 3);

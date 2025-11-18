@@ -1,7 +1,7 @@
 <?php
 global $wpdb;
-$table = $this->table_audit;
 
+$table = $this->table_audit;
 $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
 $offset = ($paged - 1) * $this->per_page;
 
@@ -13,7 +13,6 @@ $logs = $wpdb->get_results(
         $offset
     )
 );
-
 $total_pages = ceil($total / $this->per_page);
 ?>
 <div class="wrap">
@@ -68,7 +67,7 @@ $total_pages = ceil($total / $this->per_page);
         <?php
         // Pagination
         if ($total_pages > 1) {
-            $base_url = admin_url('admin.php?page=security-audit-logs');
+            $base_url = admin_url('admin.php?page=enosta-audit-log');
             echo '<div class="tablenav-pages" style="margin-top:15px">';
             for ($i = 1; $i <= $total_pages; $i++) {
                 $active = ($i == $paged) ? 'font-weight:bold;color:#2271b1' : '';

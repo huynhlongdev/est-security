@@ -32,7 +32,7 @@ class EST_Login_System
             add_action('wp_logout', [$this, 'custom_logout_redirect'], 999);
         }
 
-        $this->table = $wpdb->prefix . 'security_login_lockout';
+        $this->table = $wpdb->prefix . 'est_security_login_lockout';
         $this->enabled_lockout = get_option('est_user_lockout', 0); // 1 = enabled
         $this->max_attempts = intval(get_option('est_max_attempts', 3));
         // store est_lockout_time as minutes. Default = 5 minutes
