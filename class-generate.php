@@ -61,7 +61,6 @@ class Generate_File
         <IfModule mod_rewrite.c>
         RewriteEngine On
         RewriteBase /
-
         RewriteRule ^wp-admin/includes/ - [F,L]
         RewriteRule !^wp-includes/ - [S=3]
         RewriteRule ^wp-includes/[^/]+\.php$ - [F,L]
@@ -69,29 +68,24 @@ class Generate_File
         RewriteRule ^wp-includes/theme-compat/ - [F,L]
         </IfModule>
 
-        # 4. Disable XML-RPC
-        <Files xmlrpc.php>
-            Require all denied
-        </Files>
-
-        # 5. Prevent author enumeration
+        # 4. Prevent author enumeration
         RewriteCond %{QUERY_STRING} author=\d
         RewriteRule ^ - [F]
 
-        # 6. HSTS
+        # 5. HSTS
         <IfModule mod_headers.c>
         Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         </IfModule>
 
-        # 7. Deny access to .htaccess
+        # 6. Deny access to .htaccess
         <Files .htaccess>
             Require all denied
         </Files>
 
-        # 8. Prevent access to .git
+        # 7. Prevent access to .git
         RedirectMatch 404 /\.git
 
-        # 9. Block PHP in uploads
+        # 8. Block PHP in uploads
         <Directory "/wp-content/uploads">
             <FilesMatch "\.(php|php5|php7|phtml|phar)$">
                 Require all denied

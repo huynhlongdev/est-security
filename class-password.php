@@ -31,25 +31,48 @@ class EST_Password
 
     public function add_custom_intervals($schedules)
     {
-        $schedules['monthly'] = [
-            'interval' => 30 * DAY_IN_SECONDS,
-            'display'  => 'Every Month',
-        ];
-        $schedules['quarterly'] = [
-            'interval' => 90 * DAY_IN_SECONDS,
-            'display'  => 'Every 3 Months',
-        ];
-        $schedules['semiannually'] = [
-            'interval' => 180 * DAY_IN_SECONDS,
-            'display'  => 'Every 6 Months',
-        ];
+        $schedules['monthly'] = ['interval' => 30 * DAY_IN_SECONDS];
+        $schedules['quarterly'] = ['interval' => 90 * DAY_IN_SECONDS];
+        $schedules['semiannually'] = ['interval' => 180 * DAY_IN_SECONDS];
         return $schedules;
     }
 
     public function schedule_password_event()
     {
+
         if (!wp_next_scheduled($this->schedule_hook)) {
-            wp_schedule_event(time(), $this->interval, $this->schedule_hook);
+            $now = current_time('timestamp');
+            $current_month = (int) date('n', $now);
+            $current_year  = (int) date('Y', $now);
+
+            switch ($this->interval) {
+                case 'monthly':
+                    $next_month = $current_month + 1;
+                    break;
+
+                case 'quarterly':
+                    $next_month = $current_month + 3;
+                    break;
+
+                case 'semiannually':
+                    $next_month = $current_month + 6;
+                    break;
+
+                default:
+                    $next_month = $current_month + 1;
+            }
+
+            // Tính năm và tháng
+            $next_year = $current_year;
+            if ($next_month > 12) {
+                $next_year += floor(($next_month - 1) / 12);
+                $next_month = ($next_month - 1) % 12 + 1;
+            }
+
+            // Lấy timestamp ngày 1 của tháng tiếp theo
+            $next_run = strtotime("{$next_year}-{$next_month}-01 00:00");
+
+            wp_schedule_event($next_run, $this->interval, $this->schedule_hook);
         }
     }
 

@@ -1,7 +1,7 @@
 <?php
-$email = get_option('sfcd_notify_email', '');
+$email = get_option('est_notify_email', '');
 $enabled = get_option('est_custom_login_enabled', 1);
-$slug = get_option('est_custom_login_slug', 'est-login');
+$slug = get_option('est_custom_login_slug', est_path());
 
 $est_user_lockout = get_option('est_user_lockout', 0);
 $max_attempts = get_option('est_max_attempts', 5);
@@ -42,16 +42,20 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_email') {
 
             <table class="form-table">
                 <tr>
-                    <th><label for="sfcd_notify_email">Notification Email</label></th>
+                    <th>
+                        <label>Notification Email</label>
+                    </th>
                     <td>
-                        <input type="email" name="sfcd_notify_email" id="sfcd_notify_email"
+                        <input type="email" name="est_notify_email" id="est_notify_email"
                             value="<?php echo esc_attr($email); ?>" class="regular-text" required>
                         <p class="description">This email will receive notifications when a file is changed.</p>
                     </td>
                 </tr>
 
                 <tr>
-                    <th><label for="sfcd_notify_email">Enable Custom Login URL</label></th>
+                    <th>
+                        <label>Enable Custom Login URL</label>
+                    </th>
                     <td>
                         <input type="checkbox" name="est_custom_login_enabled" id="est_custom_login_enabled" value="1"
                             <?php echo checked(1, $enabled, false) ?>> Enable
@@ -59,7 +63,9 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_email') {
                 </tr>
 
                 <tr>
-                    <th><label for="sfcd_notify_email">Custom Slug</label></th>
+                    <th>
+                        <label>Custom Slug</label>
+                    </th>
                     <td>
                         <input type="text" name="est_custom_login_slug" id="est_custom_login_slug"
                             value="<?php echo esc_attr($slug) ?>" class="regular-text">
@@ -114,7 +120,9 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_email') {
                     </td>
                 </tr>
                 <tr>
-                    <th><label>Cron Interval</label></th>
+                    <th>
+                        <label>Cron Interval</label>
+                    </th>
                     <td>
                         <select name="est_auto_change_interval">
                             <option value="monthly" <?php selected($est_auto_change_interval ?? '', 'monthly'); ?>>Every Month</option>

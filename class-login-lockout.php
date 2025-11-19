@@ -80,6 +80,10 @@ class WP_Login_Lockout
 
     private function update_user_data($username, $attempts, $last_attempt)
     {
+        if (!username_exists($username)) {
+            return;
+        }
+
         global $wpdb;
         $exists = $this->get_user_data($username);
         if ($exists) {
@@ -109,11 +113,27 @@ class WP_Login_Lockout
     public function login_failed($username)
     {
         if (empty($username)) return;
+        global $wpdb;
 
         $user_data = $this->get_user_data($username);
         $attempts = $user_data['attempts'] ?? 0;
         $attempts++;
         $last_attempt = time();
+
+
+
+
+        // if (!empty($ip_data)) {
+        //     if ($ip_data['locked_until'] != 0) {
+        //         wp_clear_auth_cookie();
+        //         nocache_headers();
+        //         $url =  home_url('/');
+        //         header('Location: ' . $url);
+        //         exit;
+        //     }
+        // }
+
+
 
         $this->update_user_data($username, $attempts, $last_attempt);
 
@@ -191,21 +211,20 @@ class WP_Login_Lockout
 
     private function log_failed_login($username, $ip)
     {
-        if (class_exists('Security_Audit_Log_DB')) {
-            global $wpdb;
-            $table = $wpdb->prefix . 'est_security_audit_log';
 
-            $wpdb->insert(
-                $table,
-                [
-                    'user_login' => sanitize_text_field($username),
-                    'ip_address' => sanitize_text_field($ip),
-                    'action_type' => 'failed_login',
-                    'action_detail' => sprintf('Failed login attempt for username: %s', $username),
-                    'created_at' => current_time('mysql')
-                ]
-            );
-        }
+        global $wpdb;
+        $table = $wpdb->prefix . 'est_security_audit_log';
+
+        $wpdb->insert(
+            $table,
+            [
+                'user_login' => sanitize_text_field($username),
+                'ip_address' => sanitize_text_field($ip),
+                'action_type' => 'failed_login',
+                'action_detail' => sprintf('Failed login attempt for username: %s', $username),
+                'created_at' => current_time('mysql')
+            ]
+        );
     }
 
     public function login_success($user_login, $user)
@@ -231,21 +250,19 @@ class WP_Login_Lockout
 
     private function log_successful_login($username, $ip)
     {
-        if (class_exists('Security_Audit_Log_DB')) {
-            global $wpdb;
-            $table = $wpdb->prefix . 'est_security_audit_log';
+        global $wpdb;
+        $table = $wpdb->prefix . 'est_security_audit_log';
 
-            $wpdb->insert(
-                $table,
-                [
-                    'user_login' => sanitize_text_field($username),
-                    'ip_address' => sanitize_text_field($ip),
-                    'action_type' => 'successful_login',
-                    'action_detail' => sprintf('Successful login for username: %s', $username),
-                    'created_at' => current_time('mysql')
-                ]
-            );
-        }
+        $wpdb->insert(
+            $table,
+            [
+                'user_login' => sanitize_text_field($username),
+                'ip_address' => sanitize_text_field($ip),
+                'action_type' => 'successful_login',
+                'action_detail' => sprintf('Successful login for username: %s', $username),
+                'created_at' => current_time('mysql')
+            ]
+        );
     }
 
     public function check_lockout($user, $username, $password)
@@ -385,26 +402,42 @@ new WP_Login_Lockout();
 
 
 add_filter('authenticate', function ($user, $username, $password) {
-
-    // check ip
-    $current_ip = EST_Security_Helpers::get_client_ip();
-    error_log(print_r($current_ip, true));
     global $wpdb;
-    $table_ip = $wpdb->prefix . 'est_security_login_lockout_ip';
-    $ip_data = $wpdb->get_row(
-        $wpdb->prepare("SELECT * FROM `{$table_ip}` WHERE ip_address = %s", $current_ip),
+
+    // Chặn user vì đăng nhập sai quá nhiều lần
+    $lockout = $wpdb->prefix . 'est_security_login_lockout';
+    $lockout_data = $wpdb->get_row(
+        $wpdb->prepare("SELECT * FROM `{$lockout}` WHERE user_login = %s", $username),
         ARRAY_A
     );
 
-    if (!empty($ip_data)) {
-        if ($ip_data['locked_until'] != 0) {
+    if (!empty($lockout_data)) {
+        if ($lockout_data['attempts'] >= 8) {
             wp_clear_auth_cookie();
             nocache_headers();
-            $url =  home_url('/');
-            header('Location: ' . $url);
+
+            wp_die('Too many failed login attempts have been detected. Your account has been locked to protect against unauthorized access', 'Account Locked');
             exit;
         }
     }
+
+    // $current_ip = EST_Security_Helpers::get_client_ip();
+    // $table_ip = $wpdb->prefix . 'est_security_login_lockout_ip';
+    // $ip_data = $wpdb->get_row(
+    //     $wpdb->prepare("SELECT * FROM `{$table_ip}` WHERE ip_address = %s", $current_ip),
+    //     ARRAY_A
+    // );
+
+    // if (!empty($ip_data)) {
+    //     if ($ip_data['locked_until'] != 0) {
+    //         wp_clear_auth_cookie();
+    //         nocache_headers();
+    //  wp_die('Your IP address has been temporarily restricted to protect the system from repeated failed login attempts or potential abuse.', 'Access Blocked');
+    //         $url =  home_url('/');
+    //         header('Location: ' . $url);
+    //         exit;
+    //     }
+    // }
 
     return $user;
 }, 20, 3);

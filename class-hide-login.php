@@ -2,15 +2,15 @@
 class WP_Hide_Login_Forbidden
 {
 
-    private $login_slug = 'est-login';
+    private $login_slug;
     private $enabled;
-    private $max_session_time = 50000;
+    private $max_session_time = 5000;
 
     public function __construct()
     {
         // Lấy config từ DB
         $this->enabled = get_option('est_custom_login_enabled', 0);
-        $this->login_slug = trim(get_option('est_custom_login_slug', 'est-login'), '/');
+        $this->login_slug = trim(get_option('est_custom_login_slug', est_path()), '/');
 
         // Nếu chưa bật thì dừng, WP hoạt động bình thường
         if (!$this->enabled) return;
@@ -48,6 +48,18 @@ class WP_Hide_Login_Forbidden
             update_user_meta($user_id, '_login_time', $current_time);
             return;
         } elseif (($current_time - $login_time) > $this->max_session_time) {
+
+            // if (is_admin()) {
+            //     $screen = get_current_screen();
+            //     if ($screen && $screen->id === 'post') {
+            //         return; // đang trong editor → không logout
+            //     }
+            // }
+
+            // if (!empty($_POST)) {
+            //     return;
+            // }
+
             wp_clear_auth_cookie();
 
             delete_user_meta($user_id, '_login_time');
@@ -98,11 +110,9 @@ class WP_Hide_Login_Forbidden
         if (!is_user_logged_in() && strpos($_SERVER['REQUEST_URI'], 'wp-admin') !== false) {
             status_header(403);
             nocache_headers();
-            wp_die(
-                __('Sorry, you are not allowed to access this page.'),
-                __('Access Denied'),
-                ['response' => 403]
-            );
+            $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : home_url();
+            wp_redirect($referer);
+            exit;
         }
     }
 
@@ -111,15 +121,10 @@ class WP_Hide_Login_Forbidden
     {
         $req = trim($_SERVER['REQUEST_URI'], '/');
         if ($req === $this->login_slug) return;
-
         status_header(403);
         nocache_headers();
-        wp_die(
-            __('Sorry, you are not allowed to access this page.'),
-            __('Access Denied'),
-            ['response' => 403]
-        );
-        exit;
+        $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : home_url();
+        wp_redirect($referer);
     }
 
     // Custom link logout
@@ -141,6 +146,7 @@ class WP_Hide_Login_Forbidden
 
         if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'est_logout')) {
             wp_die('Invalid logout request');
+            exit;
         }
 
         wp_clear_auth_cookie();
