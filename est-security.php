@@ -19,10 +19,11 @@ require_once EST_SECURITY_PLUGIN_DIR . 'class-password.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-malware-scan.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-generate.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-audit_log.php';
+require_once EST_SECURITY_PLUGIN_DIR . 'class-recaptcha.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-login-lockout.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-prefix-db.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-two-factor.php';
-require_once EST_SECURITY_PLUGIN_DIR . 'class-recaptcha.php';
+
 
 register_activation_hook(__FILE__, function () {
 
@@ -49,9 +50,11 @@ register_activation_hook(__FILE__, function () {
         add_option('est_recaptcha_site_key', '');
         add_option('est_recaptcha_secret_key', '');
 
+        // Tạo table Lockout
         $lockout = new WP_Login_Lockout();
         $lockout->create_table();
 
+        // Tạo table Audit
         $audit = new Security_Audit_Log_DB();
         $audit->create_table();
     }

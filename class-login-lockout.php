@@ -25,13 +25,17 @@ class WP_Login_Lockout
 
         // Hooks
         add_action('wp_login_failed', [$this, 'login_failed']);
-        add_filter('authenticate', [$this, 'check_lockout'], 30, 3);
+        add_filter('authenticate', [$this, 'check_lockout'], 99, 3);
         add_action('wp_login', [$this, 'login_success'], 10, 2);
         add_filter('login_errors', [$this, 'hide_login_errors']);
 
         // Admin menu
         add_action('admin_post_unlock_user', [$this, 'unlock_user']);
         add_action('admin_post_unlock_ip', [$this, 'unlock_ip']);
+
+        // Hook AJAX
+        add_action('wp_ajax_unlock_user_ajax', [$this, 'unlock_user']);
+        add_action('wp_ajax_unlock_ip_ajax', [$this, 'unlock_ip']);
     }
 
     public function create_table()
@@ -112,16 +116,27 @@ class WP_Login_Lockout
 
     public function login_failed($username)
     {
+
+        error_log('>>>>login_failed');
+
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+
         if (empty($username)) return;
+
+        if (isset($_SESSION['est_recaptcha_error']) && !empty($_SESSION['est_recaptcha_error'])) {
+            unset($_SESSION['est_recaptcha_error']);
+            return;
+        }
+
+
         global $wpdb;
 
         $user_data = $this->get_user_data($username);
         $attempts = $user_data['attempts'] ?? 0;
         $attempts++;
         $last_attempt = time();
-
-
-
 
         // if (!empty($ip_data)) {
         //     if ($ip_data['locked_until'] != 0) {
@@ -132,8 +147,6 @@ class WP_Login_Lockout
         //         exit;
         //     }
         // }
-
-
 
         $this->update_user_data($username, $attempts, $last_attempt);
 
@@ -269,6 +282,8 @@ class WP_Login_Lockout
     {
         if (empty($username)) return $user;
 
+        // error_log(print_r('check_lockout 1', true));
+
         // Check IP lockout first
         $ip = $this->get_client_ip();
         $ip_locked = $this->check_ip_lockout($ip);
@@ -277,25 +292,25 @@ class WP_Login_Lockout
         }
 
         // Check username lockout
-        $user_data = $this->get_user_data($username);
+        // $user_data = $this->get_user_data($username);
 
-        if ($user_data) {
-            $attempts = intval($user_data['attempts']);
-            $last_attempt = intval($user_data['last_attempt']);
+        // if ($user_data) {
+        //     $attempts = intval($user_data['attempts']);
+        //     $last_attempt = intval($user_data['last_attempt']);
 
-            if ($attempts >= $this->max_attempts) {
-                $remaining = ($last_attempt + $this->lockout_time) - time();
-                if ($remaining > 0) {
-                    return new WP_Error(
-                        'account_locked',
-                        sprintf('Your account is locked. Please try again in %d minutes.', ceil($remaining / 60))
-                    );
-                } else {
-                    // Reset sau khi hết thời gian lockout
-                    $this->update_user_data($username, 0, 0);
-                }
-            }
-        }
+        //     if ($attempts >= $this->max_attempts) {
+        //         $remaining = ($last_attempt + $this->lockout_time) - time();
+        //         if ($remaining > 0) {
+        //             return new WP_Error(
+        //                 'account_locked',
+        //                 sprintf('Your account is locked. Please try again in %d minutes.', ceil($remaining / 60))
+        //             );
+        //         } else {
+        //             // Reset sau khi hết thời gian lockout
+        //             $this->update_user_data($username, 0, 0);
+        //         }
+        //     }
+        // }
 
         return $user;
     }
@@ -336,43 +351,44 @@ class WP_Login_Lockout
     // Unlock user
     public function unlock_user()
     {
-        if (!current_user_can('manage_options') || !isset($_POST['user_login'])) {
-            wp_die('Unauthorized');
+        $user = sanitize_text_field($_POST['user_login'] ?? '');
+        if (!$user) {
+            wp_send_json_error('Missing user login');
         }
 
         global $wpdb;
-        $user_login = sanitize_text_field($_POST['user_login']);
-        $wpdb->delete($this->table, ['user_login' => strtolower($user_login)], ['%s']);
+        $deleted = $wpdb->delete($this->table, ['user_login' => $user]);
 
-        wp_redirect(admin_url('admin.php?page=login-lockout'));
-        exit;
+        if ($deleted !== false) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('Failed to unlock user');
+        }
     }
 
     // Unlock IP
     public function unlock_ip()
     {
-        if (!current_user_can('manage_options') || !isset($_POST['ip_address'])) {
-            wp_die('Unauthorized');
+        $ip = sanitize_text_field($_POST['ip_address'] ?? '');
+        if (!$ip) {
+            wp_send_json_error('Missing IP address');
         }
 
-        check_admin_referer('unlock_ip');
-
         global $wpdb;
-        $ip = sanitize_text_field($_POST['ip_address']);
-        $wpdb->update(
-            $this->ip_table,
-            ['attempts' => 0, 'locked_until' => 0],
-            ['ip_address' => $ip],
-            ['%d', '%d'],
-            ['%s']
-        );
+        $deleted = $wpdb->delete($this->ip_table, ['ip_address' => $ip]);
 
-        wp_redirect(admin_url('admin.php?page=login-lockout&ip_unlocked=1'));
-        exit;
+        if ($deleted !== false) {
+            wp_send_json_success();
+        } else {
+            wp_send_json_error('Failed to unlock IP');
+        }
     }
 
     public function hide_login_errors($error)
     {
+
+        error_log('>>>>hide_login_errors');
+
         if (!isset($_POST['log'])) return $error;
 
         $username = sanitize_text_field($_POST['log']);
@@ -382,6 +398,13 @@ class WP_Login_Lockout
         if ($msg) {
             delete_transient($key);
             return esc_html($msg);
+        }
+
+        if (strpos($error, 'validate reCAPTCHA')) {
+            return __("You have not completed the reCAPTCHA verification.", 'est-security');
+        }
+        if (strpos($error, 'Incorrect reCAPTCHA')) {
+            return __("Incorrect reCAPTCHA.", 'est-security');
         }
 
         // Prevent username enumeration - generic error message
@@ -420,24 +443,6 @@ add_filter('authenticate', function ($user, $username, $password) {
             exit;
         }
     }
-
-    // $current_ip = EST_Security_Helpers::get_client_ip();
-    // $table_ip = $wpdb->prefix . 'est_security_login_lockout_ip';
-    // $ip_data = $wpdb->get_row(
-    //     $wpdb->prepare("SELECT * FROM `{$table_ip}` WHERE ip_address = %s", $current_ip),
-    //     ARRAY_A
-    // );
-
-    // if (!empty($ip_data)) {
-    //     if ($ip_data['locked_until'] != 0) {
-    //         wp_clear_auth_cookie();
-    //         nocache_headers();
-    //  wp_die('Your IP address has been temporarily restricted to protect the system from repeated failed login attempts or potential abuse.', 'Access Blocked');
-    //         $url =  home_url('/');
-    //         header('Location: ' . $url);
-    //         exit;
-    //     }
-    // }
 
     return $user;
 }, 20, 3);

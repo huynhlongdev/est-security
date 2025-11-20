@@ -137,11 +137,13 @@ class EST_Menu
                             <td><?php echo esc_html($user['attempts']); ?></td>
                             <td><?php echo date('Y-m-d H:i:s', $user['last_attempt']); ?></td>
                             <td>
-                                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-                                    <input type="hidden" name="action" value="unlock_user">
-                                    <input type="hidden" name="user_login" value="<?php echo esc_attr($user['user_login']); ?>">
-                                    <?php submit_button('Unlock', 'secondary small', 'submit', false); ?>
-                                </form>
+                                <!-- <form method="post" action="<?php echo admin_url('admin-post.php'); ?>"> -->
+                                <input type="hidden" name="action" value="unlock_user">
+                                <input type="hidden" name="user_login" value="<?php echo esc_attr($user['user_login']); ?>">
+                                <button class="unlock-user-btn button secondary small" data-user="<?php echo esc_attr($user['user_login']); ?>">
+                                    Unlock
+                                </button>
+                                <!-- </form> -->
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -170,12 +172,14 @@ class EST_Menu
                             <td><?php echo esc_html($block['attempts']); ?></td>
                             <td><?php echo date('Y-m-d H:i:s', $block['last_attempt']); ?></td>
                             <td>
-                                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-                                    <input type="hidden" name="action" value="unlock_user">
-                                    <input type="hidden" name="user_login" value="<?php //echo esc_attr($block['user_login']); 
-                                                                                    ?>">
-                                    <?php submit_button('Unlock', 'secondary small', 'submit', false); ?>
-                                </form>
+                                <!-- <form method="post" action="<?php echo admin_url('admin-post.php'); ?>"> -->
+                                <input type="hidden" name="action" value="unlock_ip">
+                                <input type="hidden" name="ip_address" value="<?php echo esc_attr($block['ip_address']);
+                                                                                ?>">
+                                <button class="unlock-ip-btn button secondary small" data-ip="<?php echo esc_attr($block['ip_address']); ?>">
+                                    Unlock
+                                </button>
+                                <!-- </form> -->
                             </td>
                         </tr>
                     <?php endforeach; ?>

@@ -84,6 +84,7 @@ class EST_Security
         wp_localize_script('est-security', 'SecurityDBPrefix', [
             'ajaxurl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('change_db_prefix_nonce'),
+            'unlock_nonce'    => wp_create_nonce('unlock_nonce')
         ]);
     }
 

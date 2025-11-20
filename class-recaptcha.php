@@ -27,7 +27,7 @@ class EST_Recaptcha
 
         // Login form
         add_action('login_form', [$this, 'render_login_recaptcha']);
-        add_filter('authenticate', [$this, 'validate_login'], 99, 3);
+        add_filter('authenticate', [$this, 'validate_login'], 5, 3);
 
         // Comment form
         add_action('comment_form_after_fields', [$this, 'render_comment_recaptcha']);
@@ -63,11 +63,17 @@ class EST_Recaptcha
     /** Validate login */
     public function validate_login($user, $username, $password)
     {
-        if (is_wp_error($user)) return $user;
         $result = $this->verify_recaptcha();
         if ($result !== true) {
-            return new WP_Error('recaptcha_error', '<strong>Lỗi reCAPTCHA:</strong> ' . $result);
+            $err = new WP_Error('recaptcha_error', '<strong>Lỗi reCAPTCHA:</strong> ' . $result);
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                @session_start();
+            }
+            $_SESSION['est_recaptcha_error'] = 1;
+            remove_all_filters('authenticate');
+            return $err;
         }
+        if (is_wp_error($user)) return $user;
         return $user;
     }
 
@@ -126,26 +132,31 @@ class EST_Recaptcha
     /** Verify chung cho mọi form */
     public function verify_recaptcha()
     {
-        $response = $_POST['g-recaptcha-response'] ?? '';
-        if (!$response) return 'Bạn chưa xác minh reCAPTCHA.';
 
-        $verify = wp_remote_post("https://www.google.com/recaptcha/api/siteverify", [
-            'body' => [
-                'secret'   => $this->secret_key,
-                'response' => $response,
-                'remoteip' => $_SERVER['REMOTE_ADDR'],
-            ]
-        ]);
+        if (!empty($_POST)) {
+            $response = $_POST['g-recaptcha-response'] ?? '';
 
-        $data = json_decode(wp_remote_retrieve_body($verify), true);
+            if (!$response) return "validate reCAPTCHA";
 
-        if ($this->version === 'v2') {
-            return ($data['success'] ?? false) ? true : 'Sai reCAPTCHA.';
+            $verify = wp_remote_post("https://www.google.com/recaptcha/api/siteverify", [
+                'body' => [
+                    'secret'   => $this->secret_key,
+                    'response' => $response,
+                    'remoteip' => $_SERVER['REMOTE_ADDR'],
+                ]
+            ]);
+
+            $data = json_decode(wp_remote_retrieve_body($verify), true);
+
+            if ($this->version === 'v2') {
+                return ($data['success'] ?? false) ? true : 'Incorrect reCAPTCHA.';
+            }
+
+            // v3
+            if (!($data['success'] ?? false)) return 'reCAPTCHA verification failed.';
+            if (($data['score'] ?? 0) < $this->threshold) return "reCAPTCHA score is too low.";
         }
 
-        // v3
-        if (!($data['success'] ?? false)) return 'Xác minh thất bại.';
-        if (($data['score'] ?? 0) < $this->threshold) return 'Điểm reCAPTCHA thấp.';
         return true;
     }
 }

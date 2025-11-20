@@ -48,18 +48,6 @@ class WP_Hide_Login_Forbidden
             update_user_meta($user_id, '_login_time', $current_time);
             return;
         } elseif (($current_time - $login_time) > $this->max_session_time) {
-
-            // if (is_admin()) {
-            //     $screen = get_current_screen();
-            //     if ($screen && $screen->id === 'post') {
-            //         return; // đang trong editor → không logout
-            //     }
-            // }
-
-            // if (!empty($_POST)) {
-            //     return;
-            // }
-
             wp_clear_auth_cookie();
 
             delete_user_meta($user_id, '_login_time');
@@ -107,11 +95,21 @@ class WP_Hide_Login_Forbidden
     // CHẶN trực tiếp wp-admin trước khi auth_redirect() chạy
     public function block_wp_admin()
     {
+        $req = $_SERVER['REQUEST_URI'];
+
+        // Cho phép admin-ajax.php
+        if (strpos($req, 'admin-ajax.php') !== false) {
+            return;
+        }
+
         if (!is_user_logged_in() && strpos($_SERVER['REQUEST_URI'], 'wp-admin') !== false) {
             status_header(403);
             nocache_headers();
-            $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : home_url();
-            wp_redirect($referer);
+            wp_die(
+                __('Sorry, you are not allowed to access this page.'),
+                __('Access Denied'),
+                ['response' => 403]
+            );
             exit;
         }
     }
@@ -123,8 +121,12 @@ class WP_Hide_Login_Forbidden
         if ($req === $this->login_slug) return;
         status_header(403);
         nocache_headers();
-        $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : home_url();
-        wp_redirect($referer);
+        wp_die(
+            __('Sorry, you are not allowed to access this page.'),
+            __('Access Denied'),
+            ['response' => 403]
+        );
+        exit;
     }
 
     // Custom link logout
@@ -158,3 +160,166 @@ class WP_Hide_Login_Forbidden
 }
 
 new WP_Hide_Login_Forbidden();
+
+
+add_action('init', function () {
+    add_rewrite_rule('^est-captcha/?$', 'index.php?est_captcha=1', 'top');
+});
+
+add_filter('query_vars', function ($vars) {
+    $vars[] = 'est_captcha';
+    return $vars;
+});
+
+add_action('template_redirect', function () {
+    if (get_query_var('est_captcha')) {
+
+        if (!session_id()) session_start();
+
+        header("Content-Type: image/png");
+
+        $im = imagecreatefrompng(__DIR__ . "/images/white-wave.png");
+        $black = imagecolorallocate($im, 0, 0, 0);
+
+        $text = strtoupper(substr(md5(microtime()), rand(0, 26), 6));
+        $_SESSION["wp_limit_captcha"] = $text;
+
+        $font = __DIR__ . "/images/coolvetica.ttf";
+
+        $font_size = 20;
+        $angle     = 5;
+        $x         = 20; // bắt đầu
+        $y         = 45;
+
+        for ($i = 0; $i < strlen($text); $i++) {
+            $char = $text[$i];
+            imagettftext($im, $font_size, $angle, $x, $y, $black, $font, $char);
+            $x += 20; // khoảng cách giữa các ký tự (giãn ra)
+        }
+
+        imagepng($im);
+        imagedestroy($im);
+
+        session_write_close();
+        exit;
+    }
+});
+
+function est_verify_captcha()
+{
+    if (!session_id()) session_start();
+
+    $input = isset($_POST['captcha']) ? trim($_POST['captcha']) : '';
+
+    if (empty($input)) {
+        wp_send_json_error([
+            'message' => __('Please enter the captcha.', 'est-plugin')
+        ]);
+    }
+
+    if (!isset($_SESSION['wp_limit_captcha'])) {
+        wp_send_json_error([
+            'message' => __('Captcha does not exist.', 'est-plugin')
+        ]);
+    }
+
+    if (strtolower($input) !== strtolower($_SESSION['wp_limit_captcha'])) {
+        wp_send_json_error([
+            'message' => __('Incorrect captcha.', 'est-plugin')
+        ]);
+    }
+
+    // set a browser cookie to mark captcha verified (1 hour)
+    $expire   = time() + 3600;
+    $path     = defined('COOKIEPATH') ? COOKIEPATH : '/';
+    $domain   = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+    $secure   = is_ssl();
+    $httponly = true;
+
+    setcookie('est_captcha_verified', '1', $expire, $path, $domain, $secure, $httponly);
+
+    wp_send_json_success([
+        'message' => __('Verification successful.', 'est-plugin')
+    ]);
+}
+add_action('wp_ajax_est_verify_captcha', 'est_verify_captcha');
+add_action('wp_ajax_nopriv_est_verify_captcha', 'est_verify_captcha');
+
+add_action('login_head', 'wp_limit_login_head');
+function wp_limit_login_head()
+{
+    if (!isset($_COOKIE["est_captcha_verified"]) && empty($_COOKIE["est_captcha_verified"])) {
+?>
+        <style>
+            .popup {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 100%;
+                background: #f0f0f1;
+                z-index: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .popup_box {
+                border: 1px solid #ededed;
+                padding: 20px;
+                border-radius: 8px;
+                background: #ffffff;
+            }
+        </style>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+
+                const btn = document.querySelector(".verify_btn");
+                const msg = document.querySelector(".captcha_msg");
+
+                btn.addEventListener("click", function() {
+                    let value = document.querySelector(".captcha_input").value.trim();
+
+                    msg.innerHTML = "<?php echo esc_js(__('Checking...', 'est-plugin')); ?>";
+
+                    fetch("<?php echo admin_url('admin-ajax.php'); ?>", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            },
+                            body: "action=est_verify_captcha&captcha=" + encodeURIComponent(value)
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                msg.style.color = "green";
+                                msg.innerHTML = data.data.message;
+
+                                // Ẩn popup sau 700ms
+                                setTimeout(() => {
+                                    document.querySelector(".popup").style.display = "none";
+                                }, 700);
+                            } else {
+                                msg.style.color = "red";
+                                msg.innerHTML = data.data.message;
+
+                                // Refresh captcha
+                                document.querySelector(".captcha").src = "<?php echo site_url('/est-captcha?v='); ?>" + Date.now();
+                            }
+                        });
+                });
+
+            });
+        </script>
+
+        <div class='popup'>
+            <div class='popup_box'>
+                <input type="text" class="captcha_input" placeholder="Enter here.." name="captcha">
+                <img class="captcha" height="55" src="<?php echo site_url('/est-captcha?v=' . time()); ?>" />
+                <input class="submit button button-primary verify_btn" type="submit" value="Verify">
+                <p class="captcha_msg" style="color:red; margin-top:10px;"></p>
+            </div>
+        </div>
+<?php
+    };
+}

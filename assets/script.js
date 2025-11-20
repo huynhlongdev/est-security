@@ -77,4 +77,46 @@ jQuery(document).ready(function ($) {
       $btn.prop("disabled", false).text("Generate");
     });
   });
+
+  $(".unlock-user-btn").on("click", function () {
+    const user = $(this).data("user");
+    const button = $(this);
+
+    $.post(
+      SecurityDBPrefix.ajaxurl,
+      {
+        action: "unlock_user_ajax",
+        user_login: user,
+        unlock_nonce: SecurityDBPrefix.unlock_nonce,
+      },
+      function (response) {
+        if (response.success) {
+          button.closest("tr").fadeOut();
+        } else {
+          alert(response.data);
+        }
+      }
+    );
+  });
+
+  $(".unlock-ip-btn").on("click", function () {
+    const ip = $(this).data("ip");
+    const button = $(this);
+
+    $.post(
+      SecurityDBPrefix.ajaxurl,
+      {
+        action: "unlock_ip_ajax",
+        ip_address: ip,
+        unlock_nonce: SecurityDBPrefix.unlock_nonce,
+      },
+      function (response) {
+        if (response.success) {
+          button.closest("tr").fadeOut();
+        } else {
+          alert(response.data);
+        }
+      }
+    );
+  });
 });
