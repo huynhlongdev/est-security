@@ -80,34 +80,15 @@ jQuery(document).ready(function ($) {
 
   $(".unlock-user-btn").on("click", function () {
     const user = $(this).data("user");
+    const login_ip = $(this).data("ip");
     const button = $(this);
 
     $.post(
       SecurityDBPrefix.ajaxurl,
       {
         action: "unlock_user_ajax",
-        user_login: user,
-        unlock_nonce: SecurityDBPrefix.unlock_nonce,
-      },
-      function (response) {
-        if (response.success) {
-          button.closest("tr").fadeOut();
-        } else {
-          alert(response.data);
-        }
-      }
-    );
-  });
-
-  $(".unlock-ip-btn").on("click", function () {
-    const ip = $(this).data("ip");
-    const button = $(this);
-
-    $.post(
-      SecurityDBPrefix.ajaxurl,
-      {
-        action: "unlock_ip_ajax",
-        ip_address: ip,
+        username: user,
+        login_ip: login_ip,
         unlock_nonce: SecurityDBPrefix.unlock_nonce,
       },
       function (response) {

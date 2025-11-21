@@ -49,14 +49,48 @@ register_activation_hook(__FILE__, function () {
         add_option('est_recaptcha_enabled', 0);
         add_option('est_recaptcha_site_key', '');
         add_option('est_recaptcha_secret_key', '');
+    }
 
-        // Tạo table Lockout
-        $lockout = new WP_Login_Lockout();
-        $lockout->create_table();
+    // Tạo table Lockout
+    global $wpdb;
+    $table = $wpdb->prefix . 'est_security_login_lockout';
+    if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") !== $table) {
+        $charset_collate = $wpdb->get_charset_collate();
 
-        // Tạo table Audit
-        $audit = new Security_Audit_Log_DB();
-        $audit->create_table();
+        $sql = "CREATE TABLE IF NOT EXISTS {$table} (
+                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+                login_ip VARCHAR(50) NOT NULL,
+                username VARCHAR(100) NOT NULL,
+                login_attempts INT(11) NOT NULL,
+                attempt_time DATETIME,
+                locked_time VARCHAR(100) NOT NULL,
+                lockout_count INT NOT NULL DEFAULT 0,
+                last_attempt DATETIME NULL,
+                PRIMARY KEY (id),
+                KEY ip_user (login_ip, username)
+            ) $charset_collate;";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+    }
+
+    // Tạo table Audit
+    $table = $wpdb->prefix . 'est_security_audit_log';
+    if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") !== $table) {
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE IF NOT EXISTS {$table} (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                user_login VARCHAR(100) DEFAULT '',
+                ip_address VARCHAR(45) DEFAULT '',
+                action_type VARCHAR(50) NOT NULL,
+                action_detail TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id)
+            ) $charset;";
+
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta($sql);
     }
 });
 
