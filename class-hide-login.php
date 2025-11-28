@@ -4,7 +4,7 @@ class WP_Hide_Login_Forbidden
 
     private $login_slug;
     private $enabled;
-    private $max_session_time = 5000;
+    private $max_session_time = 5000000;
 
     public function __construct()
     {
@@ -119,6 +119,12 @@ class WP_Hide_Login_Forbidden
     {
         $req = trim($_SERVER['REQUEST_URI'], '/');
         if ($req === $this->login_slug) return;
+
+        // Cho phép AJAX login
+        if (strpos($req, 'admin-ajax.php') !== false) {
+            return;
+        }
+
         status_header(403);
         nocache_headers();
         wp_die(
@@ -160,7 +166,6 @@ class WP_Hide_Login_Forbidden
 }
 
 new WP_Hide_Login_Forbidden();
-
 
 add_action('init', function () {
     add_rewrite_rule('^est-captcha/?$', 'index.php?est_captcha=1', 'top');
@@ -245,7 +250,7 @@ function est_verify_captcha()
 add_action('wp_ajax_est_verify_captcha', 'est_verify_captcha');
 add_action('wp_ajax_nopriv_est_verify_captcha', 'est_verify_captcha');
 
-add_action('login_head', 'wp_limit_login_head');
+// add_action('login_head', 'wp_limit_login_head');
 function wp_limit_login_head()
 {
     if (!isset($_COOKIE["est_captcha_verified"]) && empty($_COOKIE["est_captcha_verified"])) {

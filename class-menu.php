@@ -70,16 +70,6 @@ class EST_Menu
             'enosta-security-config',
             [$this, 'page_config']
         );
-
-        // add_menu_page(
-        //     'Security Settings',
-        //     'ENOSTA Security',
-        //     'manage_options',
-        //     'custom-security-settings',
-        //     [$this, 'security_admin_page'],
-        //     'dashicons-shield-alt',
-        //     80
-        // );
     }
 
 

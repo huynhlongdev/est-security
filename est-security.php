@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: ENOSTA Security
-Description: Tự động phát hiện thay đổi file và gửi về mail để báo cáo. Xóa các file nguy hiểm.
+Description: Setup security and scan malware
 Version: 1.0
 Author: Long Huynh
 */
@@ -22,7 +22,13 @@ require_once EST_SECURITY_PLUGIN_DIR . 'class-audit_log.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-recaptcha.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-login-lockout.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-prefix-db.php';
-require_once EST_SECURITY_PLUGIN_DIR . 'class-two-factor.php';
+require_once EST_SECURITY_PLUGIN_DIR . 'two-factor-authentication/two-factor-login.php';
+
+add_filter('plugin_action_links_' . plugin_basename(__FILE__), function ($links) {
+    $settings_link = '<a href="admin.php?page=enosta-security-config">Settings</a>';
+    array_unshift($links, $settings_link);
+    return $links;
+});
 
 
 register_activation_hook(__FILE__, function () {
@@ -98,3 +104,34 @@ register_deactivation_hook(__FILE__, function () {
     wp_clear_scheduled_hook('est_daily_scan');
     wp_clear_scheduled_hook('est_admin_password_reset_hook');
 });
+
+
+register_activation_hook(__FILE__, 'simba_two_factor_authentication_activation');
+if (!function_exists('simba_two_factor_authentication_activation')) {
+    function simba_two_factor_authentication_activation()
+    {
+        if (!empty($GLOBALS['simba_two_factor_authentication'])) {
+            $is_2fa_plugin_active = false;
+            $installed_plugins_slugs = array_keys(get_plugins());
+            foreach ($installed_plugins_slugs as $installed_plugin_slug) {
+                if (is_plugin_active($installed_plugin_slug)) {
+                    $temp_split_plugin_slug = explode('/', $installed_plugin_slug);
+                    if (isset($temp_split_plugin_slug[1]) && 'two-factor-login.php' == $temp_split_plugin_slug[1]) {
+                        $is_2fa_plugin_active = true;
+                        break;
+                    }
+                }
+            }
+
+            // We should prevent activation if and only if either the 2FA Premium or 2FA Free plugin is active.
+            // We should not prevent activation if either the AIOS plugin is active.
+            if ($is_2fa_plugin_active) {
+                if (file_exists(__DIR__ . '/simba-tfa/premium/loader.php')) {
+                    wp_die(esc_html__('To activate Two Factor Authentication Premium, first de-activate the free version (only one can be active at once).', 'two-factor-authentication'));
+                } else { // If the 2FA Premium plugin is active and tries to activate the 2FA Free Plugin, it throws a fatal error and stops activating the free version.
+                    wp_die(esc_html__("You can't activate Two Factor Authentication (Free) because Two Factor Authentication Premium is active (only one can be active at once).", 'two-factor-authentication'));
+                }
+            }
+        }
+    }
+}

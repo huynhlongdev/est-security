@@ -91,7 +91,7 @@ class WP_Login_Lockout
 
         global $wpdb;
         $ip = $this->get_ip();
-        $tablerows = $wpdb->get_row("SELECT * FROM  {$this->table} WHERE login_ip = '$ip' ORDER BY `id` DESC LIMIT 1 ");
+        $tablerows = $wpdb->get_row("SELECT * FROM  {$this->table} WHERE login_ip = '$ip' AND username = '$username' ORDER BY `id` DESC LIMIT 1 ");
 
         /** -----------------------------------------------------------
          * CASE 1: User bị chặn vĩnh viễn
@@ -226,13 +226,31 @@ class WP_Login_Lockout
         $ip = $this->get_ip();
         if (empty($ip)) return $user;
 
+        $ip_blocked_count = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$this->table} WHERE login_ip = %s",
+                $ip
+            )
+        );
+
+        $link = home_url("/?reset=$ip");
+        $reset_ip = sprintf(
+            'This IP has been permanently blocked.<a href="%s">Reset IP</a>',
+            esc_url($link)
+        );
+
+        if ($ip_blocked_count >= 4) {
+            $this->set_error_message($username, __("This IP has been permanently blocked1.", 'est-security'));
+            return new WP_Error('est_ip_blocked', $reset_ip);
+        }
+
         $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table} WHERE login_ip = %s AND username = %s LIMIT 1", $ip, $username));
         if (!$row) return $user;
 
         // If permanently blocked
         if (intval($row->lockout_count) >= 2 || intval($row->locked_time) === PHP_INT_MAX) {
-            $this->set_error_message($username, __("Your IP has been permanently blocked.", 'est-security'));
-            return new WP_Error('est_blocked', __("Your IP has been permanently blocked.", 'est-security'));
+            $this->set_error_message($username, __("Your IP has been permanently blocked3.", 'est-security'));
+            return new WP_Error('est_blocked', $reset_ip);
         }
 
         // If currently locked temporarily

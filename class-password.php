@@ -223,7 +223,7 @@ class EST_Password
         if (!$this->is_strong_password($pw)) {
             $validation_errors->add(
                 'weak_password',
-                __('Your password is too weak. It must contain at least 8 characters, uppercase, lowercase, number, and special character.', 'text-domain')
+                __('Your password is too weak. It must contain at least 8 characters, uppercase, lowercase, number, and special character.', 'est-security')
             );
         }
     }

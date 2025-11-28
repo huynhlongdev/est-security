@@ -19,13 +19,11 @@ $total_pages = ceil($total / $this->per_page);
     <h1>Audit Log</h1>
     <div class="admin-box">
         <?php
-
-        // Kiểm tra và hiển thị thông báo
         if (isset($_GET['deleted']) && $_GET['deleted'] === '1') {
             echo '<div class="notice notice-success is-dismissible"><p>All logs have been deleted successfully.</p></div>';
         }
-
         ?>
+
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')) ?>">
             <?php wp_nonce_field('enosta_delete_logs_action', 'enosta_delete_logs_nonce'); ?>
             <input type="hidden" name="action" value="enosta_delete_logs">
@@ -65,7 +63,6 @@ $total_pages = ceil($total / $this->per_page);
             </tbody>
         </table>
         <?php
-        // Pagination
         if ($total_pages > 1) {
             $base_url = admin_url('admin.php?page=enosta-audit-log');
             echo '<div class="tablenav-pages" style="margin-top:15px">';
