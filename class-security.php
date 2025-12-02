@@ -1,57 +1,40 @@
 <?php
 class EST_Security
 {
-    private static $instance = null;
     private $upload_directory;
     private $base_dir;
-    private $defaults = [
-        'enable_headers' => 1,
-        'enable_xmlrpc' => 0,
-        'disable_rest' => 1,
-        'block_bots' => 1,
-        'login_protect' => 1,
-        'integrity_scan' => 1,
-        'scan_interval' => 'daily', // hourly, twicedaily, daily
-    ];
     private $option_name = 'wp_shc_options';
-    private $options = [];
-    private $file_editing;
 
     public function __construct()
     {
         $this->upload_directory = wp_upload_dir();
         $this->base_dir = $this->upload_directory['basedir'];
-
-        $this->options = get_option($this->option_name, []);
-        $this->options = wp_parse_args($this->options, $this->defaults);
         register_setting($this->option_name, $this->option_name, [$this, 'sanitize_options']);
-        $this->file_editing = get_option('est_disable_file_editing', 1);
 
-        // disable file editor
-        if ($this->file_editing == 1) {
+        // Disable file editor
+        $file_editing = get_option('est_disable_file_editing', 1);
+        if ($file_editing == 1) {
             if (!defined('DISALLOW_FILE_EDIT')) define('DISALLOW_FILE_EDIT', true);
         }
 
-        // add security on headers
-        if (!is_admin() && !wp_doing_ajax() && get_option('est_prevent_site_display_inside_frame', 1) == 1) {
+        // Add security on headers
+        $set_header = get_option('est_prevent_site_display_inside_frame', 1);
+        if (!is_admin() && !wp_doing_ajax() && $set_header == 1) {
             add_action('send_headers', array($this, 'set_header'));
         }
 
-        // Remove wp_generator
+        // Remove generator
         add_action('init', [$this, 'remove_wp_generator']);
 
-        // block bad bots
-        if ($this->options['block_bots']) add_action('init', [$this, 'block_bad_bots']);
+        // Block bad bots
+        add_action('init', [$this, 'block_bad_bots']);
 
-        if (!$this->options['enable_xmlrpc']) {
-            add_filter('xmlrpc_enabled', '__return_false');
-        }
+        // Disable XML-RPC
+        add_filter('xmlrpc_enabled', '__return_false');
 
-        /** Disable REST API */
-        if ($this->options['disable_rest']) {
-            add_filter('rest_authentication_errors', array($this, 'disable_rest_api'));
-            add_filter('rest_endpoints', array($this, 'disable_user_endpoint'));
-        }
+        // Disable REST API
+        add_filter('rest_authentication_errors', array($this, 'disable_rest_api'));
+        add_filter('rest_endpoints', array($this, 'disable_user_endpoint'));
 
         /** Remove files */
         add_action('wp_ajax_delete_php_files_ajax', array($this, 'delete_php_files_ajax'));
@@ -386,6 +369,8 @@ class EST_Security
         }
     }
 
+    // Quét user admin có username là "admin"
+    // Update password và gửi thông báo
     function scan_admin_role()
     {
         $admins = get_users([

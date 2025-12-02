@@ -36,31 +36,6 @@ class Security_Audit_Log_DB
         exit;
     }
 
-    /**
-     * Tạo bảng log khi kích hoạt plugin
-     */
-    public function create_table()
-    {
-        global $wpdb;
-
-        if ($wpdb->get_var("SHOW TABLES LIKE '{$this->table}'") !== $this->table) {
-            $charset = $wpdb->get_charset_collate();
-
-            $sql = "CREATE TABLE IF NOT EXISTS {$this->table} (
-                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-                user_login VARCHAR(100) DEFAULT '',
-                ip_address VARCHAR(45) DEFAULT '',
-                action_type VARCHAR(50) NOT NULL,
-                action_detail TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (id)
-            ) $charset;";
-
-            require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-            dbDelta($sql);
-        }
-    }
-
     private function insert_log($type, $detail)
     {
         global $wpdb;

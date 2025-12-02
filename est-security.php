@@ -24,37 +24,50 @@ require_once EST_SECURITY_PLUGIN_DIR . 'class-login-lockout.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-prefix-db.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'two-factor-authentication/two-factor-login.php';
 
+// Thêm link Settings vào trang plugin
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), function ($links) {
     $settings_link = '<a href="admin.php?page=enosta-security-config">Settings</a>';
     array_unshift($links, $settings_link);
     return $links;
 });
 
-
+// Khởi tạo plugin
 register_activation_hook(__FILE__, function () {
 
+    // Tạo file
     new Generate_File();
 
+    // Tạo giá trị mặc định
     if (!get_option('est_security')) {
         add_option('est_security', 1);
 
-        // Tạo giá trị mặc định
+        // 1. File protection
         add_option('est_default_wp_files', 1);
         add_option('est_disable_file_editing', 1);
         add_option('est_copy_protection', 1);
         add_option('est_prevent_site_display_inside_frame', 1);
+
+        // 2. Malware scan
         add_option('est_notify_email', get_option('admin_email', ''));
+        add_option('est_enable_auto_change', 1);
+        add_option('est_auto_change_interval', 'monthly');
+
+        // 3. Login protection
         add_option('est_custom_login_enabled', 1);
         add_option('est_custom_login_slug', est_path());
         add_option('est_user_lockout', 0);
         add_option('est_max_attempts', 5);
         add_option('est_lockout_time', 300);
-        add_option('est_enable_auto_change', 1);
-        add_option('est_auto_change_interval', 'monthly');
-        add_option('est_recaptcha_version', 'v2');
+
+        // 4. Recaptcha mặc định
         add_option('est_recaptcha_enabled', 0);
+        add_option('est_recaptcha_version', 'v2');
         add_option('est_recaptcha_site_key', '');
         add_option('est_recaptcha_secret_key', '');
+
+        // 5. Auto logout
+        add_option('est_user_auto_logout', 1);
+        add_option('est_auto_logout_time', 2);
     }
 
     // Tạo table Lockout
@@ -100,12 +113,13 @@ register_activation_hook(__FILE__, function () {
     }
 });
 
+// Hủy bỏ các tác vụ đã lên lịch khi hủy kích hoạt plugin
 register_deactivation_hook(__FILE__, function () {
     wp_clear_scheduled_hook('est_daily_scan');
     wp_clear_scheduled_hook('est_admin_password_reset_hook');
 });
 
-
+// Kiểm tra xung đột với plugin Two Factor Authentication
 register_activation_hook(__FILE__, 'simba_two_factor_authentication_activation');
 if (!function_exists('simba_two_factor_authentication_activation')) {
     function simba_two_factor_authentication_activation()

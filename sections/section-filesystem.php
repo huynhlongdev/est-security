@@ -168,7 +168,7 @@ if (!is_wp_error($response)) {
                 </ul>
                 <?php if (!empty($files)): ?>
                     <button type="button" id="delete-php-files-btn" class="button button-danger">
-                        <?php _e('Delete', DOMAIN); ?>
+                        <?php _e('Delete', 'est-security'); ?>
                     </button>
                 <?php endif; ?>
             </form>

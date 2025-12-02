@@ -58,6 +58,10 @@ class EST_Security_Setting
         update_option('est_enable_auto_change', isset($_POST['est_enable_auto_change']) ? 1 : 0);
         update_option('est_auto_change_interval', isset($_POST['est_auto_change_interval']) ? $_POST['est_auto_change_interval'] : 'monthly');
 
+        // Auto logout
+        update_option('est_user_auto_logout', isset($_POST['est_user_auto_logout']) ? 1 : 0);
+        update_option('est_auto_logout_time', isset($_POST['est_auto_logout_time']) ? $_POST['est_auto_logout_time'] : 2);
+
         if ($timestamp = wp_next_scheduled('est_admin_password_reset_hook')) {
             wp_unschedule_event($timestamp, 'est_admin_password_reset_hook');
         }

@@ -4,12 +4,12 @@
     }
 </style>
 <div class="wrap">
-    <h1><?php _e('Security Settings', DOMAIN); ?></h1>
+    <h1><?php _e('Security Settings', 'est-security'); ?></h1>
 
     <div class="nav-tab-wrapper">
         <a href="/wp-admin/admin.php?page=custom-security-settings&action=permissions"
             class="nav-tab <?php echo (isset($_GET['action']) && $_GET['action'] === 'permissions') ? 'nav-tab-active' : ''; ?>">
-            <?php _e('Permissions', DOMAIN); ?>
+            <?php _e('Permissions', 'est-security'); ?>
         </a>
     </div>
     <!-- nav-tab-wrapper -->
@@ -35,7 +35,7 @@
             }
             update_option('custom_disabled_permissions', $selected);
             $saved = $selected;
-            echo '<div class="updated notice"><p>' . esc_html__('Permissions updated.', DOMAIN) . '</p></div>';
+            echo '<div class="updated notice"><p>' . esc_html__('Permissions updated.', 'est-security') . '</p></div>';
         }
 
         if (!is_array($saved)) $saved = [];
@@ -43,7 +43,7 @@
 
         <form method=" post">
             <?php wp_nonce_field('save_custom_permissions', 'custom_permissions_nonce'); ?>
-            <h2><?php _e('Disable Write Permissions For:', DOMAIN); ?></h2>
+            <h2><?php _e('Disable Write Permissions For:', 'est-security'); ?></h2>
             <table class="form-table">
                 <tbody>
                     <?php foreach ($paths as $key => $label) {
@@ -55,13 +55,13 @@
                                 <label>
                                     <input type="radio" name="disabled_permissions[<?php echo esc_attr($key); ?>]"
                                         value="true" <?php checked($current === true); ?>>
-                                    <?php esc_html_e('True', DOMAIN); ?>
+                                    <?php esc_html_e('True', 'est-security'); ?>
                                 </label>
                                 &nbsp;
                                 <label>
                                     <input type="radio" name="disabled_permissions[<?php echo esc_attr($key); ?>]"
                                         value="false" <?php checked($current === false); ?>>
-                                    <?php esc_html_e('False', DOMAIN); ?>
+                                    <?php esc_html_e('False', 'est-security'); ?>
                                 </label>
                             </td>
                         </tr>
@@ -69,7 +69,7 @@
                 </tbody>
             </table>
             <p>
-                <button type="submit" class="button button-primary"><?php esc_html_e('Save', DOMAIN); ?></button>
+                <button type="submit" class="button button-primary"><?php esc_html_e('Save', 'est-security'); ?></button>
             </p>
         </form>
     </div>

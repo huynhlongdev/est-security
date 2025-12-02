@@ -4,7 +4,7 @@ class WP_Hide_Login_Forbidden
 
     private $login_slug;
     private $enabled;
-    private $max_session_time = 5000000;
+    private $max_session_time = 2 * 60 * 60; // default 2 hours
 
     public function __construct()
     {
@@ -27,8 +27,13 @@ class WP_Hide_Login_Forbidden
         add_action('parse_request', [$this, 'handle_logout'], 999);
 
         // CHECK session timeout
-        add_action('init', [$this, 'check_session_timeout']);
-        add_action('wp_login', [$this, 'set_login_time'], 10, 2);
+        $est_user_auto_logout = get_option('est_user_auto_logout', 1);
+        $est_auto_logout_time = get_option('est_auto_logout_time', 2);
+        if ($est_user_auto_logout == 1) {
+            $this->max_session_time = intval($est_auto_logout_time) * 60 * 60;
+            add_action('init', [$this, 'check_session_timeout']);
+            add_action('wp_login', [$this, 'set_login_time'], 10, 2);
+        }
     }
 
     public function set_login_time($user_login, $user)

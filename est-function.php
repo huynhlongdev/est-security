@@ -1,5 +1,6 @@
 <?php
 
+// Lấy đường dẫn tùy chỉnh cho trang đăng nhập
 function est_path()
 {
     $domain = $_SERVER['SERVER_NAME'];
@@ -7,6 +8,7 @@ function est_path()
     return $first . '-start';
 }
 
+// Bảo vệ sao chép nội dung
 add_action('wp_enqueue_scripts', function () {
     if (is_user_logged_in()) return;
     if (get_option('est_copy_protection') == 0) return;

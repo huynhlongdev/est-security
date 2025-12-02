@@ -15,6 +15,9 @@ $recaptcha_secret_key = get_option('est_recaptcha_secret_key', '');
 $est_enable_auto_change = get_option('est_enable_auto_change', 1);
 $est_auto_change_interval = get_option('est_auto_change_interval', 'monthly');
 
+$est_user_auto_logout = get_option('est_user_auto_logout', 1);
+$est_auto_logout_time = get_option('est_auto_logout_time', 2);
+
 if (isset($_GET['saved'])) {
     echo '<div class="updated notice"><p>Settings saved successfully.</p></div>';
 }
@@ -99,6 +102,26 @@ if (isset($_GET['error']) && $_GET['error'] === 'invalid_email') {
                                 <label>Lockout time in seconds (15 minutes)</label><br>
                                 <input type="text" name="est_lockout_time" id="est_lockout_time"
                                     value="<?php echo esc_attr($lockout_time) ?>" class="regular-text">
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>
+                        <label>
+                            Automatic logout
+                        </label>
+                    </th>
+                    <td>
+                        <input type="checkbox" name="est_user_auto_logout" value="1"
+                            <?php echo checked(1, $est_user_auto_logout, false) ?>>
+                        Enable
+                        <div class="mt-30" style="margin-top: 15px">
+                            <p>
+                                <label>Automatic logout time (in minutes)</label><br>
+                                <input type="text" name="est_auto_logout_time" id="est_auto_logout_time"
+                                    value="<?php echo esc_attr($est_auto_logout_time) ?>" class="regular-text">
                             </p>
                         </div>
                     </td>
