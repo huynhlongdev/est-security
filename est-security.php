@@ -1,8 +1,8 @@
 <?php
 /*
-Plugin Name: ENOSTA Security
+Plugin Name: ENOSTA AIOS
 Description: Setup security and scan malware
-Version: 1.0
+Version: 1.0.1
 Author: Long Huynh
 */
 
@@ -23,11 +23,16 @@ require_once EST_SECURITY_PLUGIN_DIR . 'class-recaptcha.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-login-lockout.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'class-prefix-db.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'two-factor-authentication/two-factor-login.php';
+require_once __DIR__  . '/class-plugin-updater.php';
+
+new EST_Security_Updater(__FILE__);
 
 // Thêm link Settings vào trang plugin
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), function ($links) {
+
     $settings_link = '<a href="admin.php?page=enosta-security-config">Settings</a>';
     array_unshift($links, $settings_link);
+
     return $links;
 });
 
@@ -40,34 +45,33 @@ register_activation_hook(__FILE__, function () {
     // Tạo giá trị mặc định
     if (!get_option('est_security')) {
         add_option('est_security', 1);
+    }
 
-        // 1. File protection
-        add_option('est_default_wp_files', 1);
-        add_option('est_disable_file_editing', 1);
-        add_option('est_copy_protection', 1);
-        add_option('est_prevent_site_display_inside_frame', 1);
+    $default_options = array(
+        'est_default_wp_files'             => 1,
+        'est_disable_file_editing'         => 1,
+        'est_copy_protection'              => 1,
+        'est_prevent_site_display_inside_frame' => 1,
+        'est_notify_email'                 => get_option('admin_email', ''),
+        'est_enable_auto_change'           => 1,
+        'est_auto_change_interval'         => 'monthly', // monthly / 3months / 6months
+        'est_custom_login_enabled'         => 1,
+        'est_custom_login_slug'            => est_path(),
+        'est_user_lockout'                 => 0,
+        'est_max_attempts'                 => 5,
+        'est_lockout_time'                 => 300, // seconds
+        'est_recaptcha_enabled'            => 0,
+        'est_recaptcha_version'            => 'v2',
+        'est_recaptcha_site_key'           => '',
+        'est_recaptcha_secret_key'         => '',
+        'est_user_auto_logout'             => 1,
+        'est_auto_logout_time'             => 2, // minutes
+    );
 
-        // 2. Malware scan
-        add_option('est_notify_email', get_option('admin_email', ''));
-        add_option('est_enable_auto_change', 1);
-        add_option('est_auto_change_interval', 'monthly');
-
-        // 3. Login protection
-        add_option('est_custom_login_enabled', 1);
-        add_option('est_custom_login_slug', est_path());
-        add_option('est_user_lockout', 0);
-        add_option('est_max_attempts', 5);
-        add_option('est_lockout_time', 300);
-
-        // 4. Recaptcha mặc định
-        add_option('est_recaptcha_enabled', 0);
-        add_option('est_recaptcha_version', 'v2');
-        add_option('est_recaptcha_site_key', '');
-        add_option('est_recaptcha_secret_key', '');
-
-        // 5. Auto logout
-        add_option('est_user_auto_logout', 1);
-        add_option('est_auto_logout_time', 2);
+    foreach ($default_options as $option_name => $option_value) {
+        if (get_option($option_name) === false) {
+            add_option($option_name, $option_value);
+        }
     }
 
     // Tạo table Lockout

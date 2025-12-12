@@ -63,6 +63,7 @@ class EST_Recaptcha
     /** Validate login */
     public function validate_login($user, $username, $password)
     {
+        // error_log(print_r($username . '---' . $password, true));
         $result = $this->verify_recaptcha();
         if ($result !== true) {
             $err = new WP_Error('recaptcha_error', '<strong>Lỗi reCAPTCHA:</strong> ' . $result);

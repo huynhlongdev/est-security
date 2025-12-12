@@ -78,8 +78,6 @@ jQuery(function ($) {
             $("#al_type_desc").html(resp["al_type_disp"]["desc"]);
           }
         } catch (err) {
-          console.log(err);
-          console.log(response);
           if ("" === simba_tfa_frontend.also_try) {
             alert(simba_tfa_frontend.response + response);
           }
@@ -120,8 +118,6 @@ jQuery(function ($) {
                     $("#al_type_desc").html(resp["al_type_disp"]["desc"]);
                   }
                 } catch (err) {
-                  console.log(err);
-                  console.log(response);
                   alert(simba_tfa_frontend.response + response);
                 }
                 $.unblockUI();

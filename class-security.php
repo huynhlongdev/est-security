@@ -32,6 +32,22 @@ class EST_Security
         // Disable XML-RPC
         add_filter('xmlrpc_enabled', '__return_false');
 
+        remove_action('wp_head', 'feed_links_extra', 3); // Category, tag feeds
+        remove_action('wp_head', 'feed_links', 2);        // Post & comment feeds
+        remove_action('wp_head', 'rest_output_link_wp_head');
+        remove_action('template_redirect', 'rest_output_link_header');
+        remove_action('template_redirect', 'wp_shortlink_header', 11);
+        remove_action('template_redirect', 'feed_links', 2);
+        remove_action('wp_head', 'rsd_link');
+
+        remove_action('wp_head', 'wp_oembed_add_discovery_links');
+        remove_action('wp_head', 'wp_oembed_add_host_js');
+        remove_action('rest_api_init', 'wp_oembed_register_route');
+        add_filter('embed_oembed_discover', '__return_false');
+        remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
+        remove_filter('pre_oembed_result', 'wp_filter_pre_oembed_result', 10);
+
+
         // Disable REST API
         add_filter('rest_authentication_errors', array($this, 'disable_rest_api'));
         add_filter('rest_endpoints', array($this, 'disable_user_endpoint'));
@@ -89,7 +105,7 @@ class EST_Security
     }
 
     // Thêm header cho request
-    function set_header()
+    public function set_header()
     {
         $recaptcha = '';
         $site_key        = get_option('est_recaptcha_site_key', '');
@@ -102,13 +118,16 @@ class EST_Security
 
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com {$recaptcha}",
-            "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com {$recaptcha}",
+            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com {$recaptcha}",
+            "img-src 'self' data: https://secure.gravatar.com https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com {$recaptcha}",
+            "worker-src 'self' blob:",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "font-src 'self' https://fonts.gstatic.com",
+            "font-src 'self' https://fonts.gstatic.com data:",
             "frame-src {$recaptcha}",
-            "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com {$recaptcha}",
+            "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://analytics.google.com {$recaptcha}",
         ];
+
+        $csp = apply_filters('est_csp_policy', $csp);
 
         $headers = [
             'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains',

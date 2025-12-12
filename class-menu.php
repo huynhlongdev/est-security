@@ -121,25 +121,28 @@ class EST_Menu
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($logouts as $user) : ?>
-                        <tr>
-                            <td><?php echo esc_html($user['login_ip']); ?></td>
-                            <td><?php echo esc_html($user['username']); ?></td>
-                            <td><?php echo date('Y-m-d H:i:s', $user['locked_time']);
-                                ?></td>
-                            <td><?php echo esc_html($user['lockout_count']);
-                                ?></td>
-                            <td>
-                                <!-- <form method="post" action="<?php echo admin_url('admin-post.php'); ?>"> -->
-                                <input type="hidden" name="action" value="unlock_user">
-                                <input type="hidden" name="user_login" value="<?php echo esc_attr($user['user_login']); ?>">
-                                <button class="unlock-user-btn button secondary small" data-ip="<?php echo esc_attr($user['login_ip']); ?>" data-user="<?php echo esc_attr($user['username']); ?>">
-                                    Unlock
-                                </button>
-                                <!-- </form> -->
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
+                    <?php
+                    if (!empty($logouts)) :
+                        foreach ($logouts as $user) : ?>
+                            <tr>
+                                <td><?php echo esc_html($user['login_ip']); ?></td>
+                                <td><?php echo esc_html($user['username']); ?></td>
+                                <td><?php echo date('Y-m-d H:i:s', $user['locked_time']);
+                                    ?></td>
+                                <td><?php echo esc_html($user['lockout_count']);
+                                    ?></td>
+                                <td>
+                                    <!-- <form method="post" action="<?php echo admin_url('admin-post.php'); ?>"> -->
+                                    <input type="hidden" name="action" value="unlock_user">
+                                    <input type="hidden" name="user_login" value="<?php echo esc_attr($user['username']); ?>">
+                                    <button class="unlock-user-btn button secondary small" data-ip="<?php echo esc_attr($user['login_ip']); ?>" data-user="<?php echo esc_attr($user['username']); ?>">
+                                        Unlock
+                                    </button>
+                                    <!-- </form> -->
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                     <?php if (empty($logouts)) : ?>
                         <tr>
                             <td colspan="4">No locked users</td>

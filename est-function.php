@@ -15,13 +15,15 @@ add_action('wp_enqueue_scripts', function () {
     // Thêm JS inline sau jquery
     $redirect_url = home_url('/');
     $custom_js = "
-        jQuery(document).ready(function($) {
+        document.addEventListener('DOMContentLoaded', function() {
             var redirect = function() {
                 window.location.href = '" . $redirect_url . "';
             };
             var stop = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+                if (e.stopPropagation) e.stopPropagation();
+                e.returnValue = false;
+                return false;
             };
 
             // Disable right-click
@@ -72,24 +74,23 @@ add_action('wp_enqueue_scripts', function () {
 
             // Block common keyboard shortcuts: Ctrl/Cmd+C, Ctrl+U, F12, Ctrl+Shift+I, Ctrl+S
             document.addEventListener('keydown', function(e) {
-                var key = e.key || e.keyCode;
+                var keyCode = e.keyCode || e.which;
                 var ctrl = e.ctrlKey || e.metaKey;
 
                 // F12
-                if (e.keyCode === 123) {
+                if (keyCode === 123) {
                     stop(e);
                     return false;
                 }
 
-                // Ctrl/Cmd+U (view-source), Ctrl/Cmd+S, Ctrl+Shift+I (devtools), Ctrl/Cmd+C
-                if (ctrl && (e.keyCode === 85 || e.keyCode === 83 || (e.shiftKey && e.keyCode === 73) || e
-                        .keyCode === 67)) {
+                // Ctrl/Cmd+U (view-source = 85), Ctrl/Cmd+S (83), Ctrl+Shift+I (73), Ctrl/Cmd+C (67)
+                if (ctrl && (keyCode === 85 || keyCode === 83 || (e.shiftKey && keyCode === 73) || keyCode === 67)) {
                     stop(e);
                     return false;
                 }
 
                 // Block Ctrl+A (select all) — optional; uncomment if want to block
-                // if (ctrl && e.keyCode === 65) { stop(e); return false; }
+                // if (ctrl && keyCode === 65) { stop(e); return false; }
             }, {
                 capture: true
             });
@@ -103,32 +104,32 @@ add_action('wp_enqueue_scripts', function () {
                         // if selection is inside input/textarea, keep it
                         var node = s.anchorNode;
                         while (node && node.nodeType !== 1) node = node.parentNode;
-                        if (node && (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || node
-                                .isContentEditable)) {
+                        if (node && (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || node.isContentEditable)) {
                             return;
                         }
                         s.collapseToStart();
                     }
-                } catch (err) {}
-            }, {
-                capture: false
-            });
+                } catch (err) {
+                    // Silently fail
+                }
+            }, false);
 
             // Also prevent copy via context menu fallback on older browsers
-            window.addEventListener('mouseup', function() {
+            document.addEventListener('mouseup', function() {
                 try {
                     var s = window.getSelection();
                     if (s && s.toString().length > 0) {
                         var node = s.anchorNode;
                         while (node && node.nodeType !== 1) node = node.parentNode;
-                        if (node && (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || node
-                                .isContentEditable)) {
+                        if (node && (node.tagName === 'INPUT' || node.tagName === 'TEXTAREA' || node.isContentEditable)) {
                             return;
                         }
                         s.removeAllRanges();
                     }
-                } catch (err) {}
-            });
+                } catch (err) {
+                    // Silently fail
+                }
+            }, false);
 
             // Helpful: disable drag and drop paste
             document.addEventListener('paste', function(e) {

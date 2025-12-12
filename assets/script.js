@@ -78,6 +78,30 @@ jQuery(document).ready(function ($) {
     });
   });
 
+  $("#update-est-security").on("click", function () {
+    //update-message notice inline notice-warning notice-alt updating-message
+    console.log(">>> update");
+    $(this)
+      .closest("tr")
+      .find(".update-message")
+      .addClass("updating-message")
+      .find("p")
+      .html("Updating... Please wait.");
+
+    const button = $(this).closest("tr");
+
+    $.post(
+      SecurityDBPrefix.ajaxurl,
+      {
+        action: "update_est_plugin_ajax",
+        unlock_nonce: SecurityDBPrefix.unlock_nonce,
+      },
+      function (response) {
+        window.location.reload();
+      }
+    );
+  });
+
   $(".unlock-user-btn").on("click", function () {
     const user = $(this).data("user");
     const login_ip = $(this).data("ip");

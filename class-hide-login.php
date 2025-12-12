@@ -74,6 +74,12 @@ class WP_Hide_Login_Forbidden
 
         // Kiểm tra nếu path khớp với login slug
         if ($path === $this->login_slug) {
+
+            if (is_user_logged_in()) {
+                wp_safe_redirect(admin_url());
+                exit;
+            }
+
             $user_login     = isset($_REQUEST['log']) ? wp_unslash($_REQUEST['log']) : '';
             $error          = '';
             $errors         = new WP_Error();
@@ -122,11 +128,49 @@ class WP_Hide_Login_Forbidden
     // Chặn truy cập wp-login.php
     public function block_wp_login_direct()
     {
-        $req = trim($_SERVER['REQUEST_URI'], '/');
+        // $req = trim($_SERVER['REQUEST_URI'], '/');
+        // if ($req === $this->login_slug) return;
+
+        // // Cho phép AJAX login
+        // // if (strpos($req, 'admin-ajax.php') !== false) {
+        // //     return;
+        // // }
+        // if (defined('DOING_AJAX') && DOING_AJAX) {
+        //     return;
+        // }
+
+        // // Allow calling admin-ajax directly
+        // if (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], 'admin-ajax.php') !== false) {
+        //     return;
+        // }
+
+        $req = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+
+        // Nếu là custom login → OK
         if ($req === $this->login_slug) return;
 
-        // Cho phép AJAX login
-        if (strpos($req, 'admin-ajax.php') !== false) {
+        // Allow AJAX
+        if (defined('DOING_AJAX') && DOING_AJAX) return;
+
+        // Allow admin-ajax
+        if (strpos($_SERVER['SCRIPT_NAME'], 'admin-ajax.php') !== false) return;
+
+        // Lấy action (login, lostpassword, resetpass, register, confirm_admin_email)
+        $action = isset($_REQUEST['action']) ? sanitize_key($_REQUEST['action']) : '';
+
+        // Cho phép WP xử lý những action đặc biệt
+        $allowed_actions = [
+            'logout',
+            'lostpassword',
+            'retrievepassword',
+            'resetpass',
+            'rp',
+            'register',
+            'confirm_admin_email',   // ✳✳ BẮT BUỘC THÊM ✳✳
+            'postpass',
+        ];
+
+        if (in_array($action, $allowed_actions, true)) {
             return;
         }
 

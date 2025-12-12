@@ -25,8 +25,6 @@ jQuery(function ($) {
           if ("" !== simbatfa_totp.also_try) {
             alert(simbatfa_totp.response + " " + response);
           }
-          console.log(response);
-          console.log(err);
         }
 
         if ("" === got_code && "" !== simbatfa_totp.also_try) {
@@ -43,20 +41,15 @@ jQuery(function ($) {
                 if (resp.code) {
                   $(".simba_current_otp").html(resp.code);
                 } else {
-                  console.log(response);
-                  console.log("TFA: no code found");
                 }
               } catch (err) {
                 alert(simbatfa_totp.response + " " + response);
-                console.log(response);
-                console.log(err);
               }
             }
           );
         } else if ("" != got_code) {
           $(".simba_current_otp").html(got_code);
         } else {
-          console.log("TFA: no code found");
         }
       }
     );

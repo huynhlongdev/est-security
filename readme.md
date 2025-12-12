@@ -1,78 +1,80 @@
-# Hướng dẫn Bảo mật WordPress
+# WordPress Security Guidelines
 
-Tài liệu này tổng hợp các biện pháp bảo mật WordPress, bao gồm bảo mật cốt lõi hệ thống/admin, bảo vệ file/database, bảo mật website/frontend, và ghi log/báo cáo.
-
----
-
-## 1. Bảo mật cốt lõi hệ thống / tài khoản admin
-
-- **Quét username là "admin", đổi username và gửi thông tin về email**  
-  → Ngay từ đầu nên đổi username mặc định “admin” để giảm rủi ro brute force.
-
-- **Xử lý strong password & tự động đổi password định kỳ (hàng tháng/3 tháng/6 tháng)**  
-  → Bảo vệ mật khẩu admin luôn mạnh và thay đổi định kỳ.
-
-- **Xác thực 2FA**  
-  → Bổ sung bảo vệ hai lớp cho admin/ tài khoản quan trọng.
-
-- **Đổi đường dẫn admin, chặn các đường dẫn mặc định**  
-  → Ngăn bot quét đường dẫn mặc định như `/wp-admin`, `/wp-login.php`.
-
-- **Giới hạn số lần login sai, khóa IP khi phát hiện spam, mở khóa IP**  
-  → Ngăn brute-force attack và spam login.
+This document outlines a comprehensive set of security measures for WordPress, covering core system/admin security, file/database protection, frontend security, and logging/reporting.
 
 ---
 
-## 2. Bảo mật file & database
+## 1. Core System / Admin Security
 
-- **Random prefix DB**  
-  → Tránh việc hacker đoán bảng mặc định `wp_`.
+- **Scan for "admin" username, rename it, and send notification via email**  
+  → Change the default "admin" username early to reduce brute-force risks.
 
-- **Set header chặn request (Security headers)**  
-  → Ngăn clickjacking, XSS và các tấn công từ trình duyệt.
+- **Enforce strong passwords & automatically rotate passwords periodically (monthly/3 months/6 months)**  
+  → Ensure admin passwords are always strong and changed regularly.
 
-- **Check File permissions**  
-  → Xác thực quyền file/folder đúng chuẩn (644 cho file, 755 cho folder).
+- **Enable Two-Factor Authentication (2FA)**  
+  → Adds an extra layer of protection for admin and important accounts.
 
-- **Tự động thiết lập permissions cho file `wp-config.php`, `.htaccess`**  
-  → File quan trọng được bảo vệ đúng quyền, tránh truy cập trái phép.
+- **Change admin URL and block default paths**  
+  → Prevent bots from targeting default paths like `/wp-admin` or `/wp-login.php`.
 
-- **Tự động cấu hình file `.htaccess` ở root và tự động thêm các file `.htaccess` cho folders `uploads`, `wp-includes`, …**  
-  → Giới hạn truy cập trực tiếp, bảo vệ upload, core.
-
-- **Xóa `readme.html`, `license.txt`, `wp-config-sample.php` mặc định và xóa khi update core WordPress**  
-  → Ngăn hacker thu thập thông tin version.
-
-- **Tắt Edit file trong admin của WordPress**  
-  → Ngăn chèn mã độc trực tiếp trong theme/plugin.
+- **Limit login attempts, lock IPs on spam detection, and allow unlocking**  
+  → Prevent brute-force attacks and login spam.
 
 ---
 
-## 3. Bảo mật website / frontend
+## 2. File & Database Security
 
-- **Thêm reCAPTCHA vào form login/contact form**  
-  → Ngăn spam bot và tấn công brute-force.
+- **Randomize database table prefixes**  
+  → Prevent hackers from guessing default tables like `wp_`.
 
-- **Chặn chuột phải và copy**  
-  → Ngăn người dùng copy nội dung (mức độ bảo vệ thấp, nhưng bổ sung).
+- **Set security headers**  
+  → Prevent clickjacking, XSS, and other browser-based attacks.
 
-- **Chặn iframe**  
-  → Ngăn clickjacking và nhúng website trái phép.
+- **Check file permissions**  
+  → Ensure correct permissions for files/folders (644 for files, 755 for folders).
 
-- **Quét được các file PHP trong folder `uploads` và xóa nếu nghi ngờ file độc**  
-  → Giám sát folder upload thường là nơi hacker chèn backdoor.
+- **Automatically set permissions for `wp-config.php` and `.htaccess`**  
+  → Protect critical files from unauthorized access.
+
+- **Automatically configure `.htaccess` in root and for folders like `uploads`, `wp-includes`**  
+  → Restrict direct access and protect sensitive folders.
+
+- **Remove default files like `readme.html`, `license.txt`, `wp-config-sample.php` and ensure deletion after core updates**  
+  → Prevent hackers from collecting WordPress version information.
+
+- **Disable file editing in the WordPress admin**  
+  → Prevent inserting malicious code via theme/plugin editor.
+
+---
+
+## 3. Website / Frontend Security
+
+- **Add reCAPTCHA to login/contact forms**  
+  → Prevent spam bots and brute-force attacks.
+
+- **Disable right-click and copy**  
+  → Protect content from casual copying (low-level protection).
+
+- **Block iframes**  
+  → Prevent clickjacking and unauthorized embedding of the website.
+
+- **Scan PHP files in `uploads` folder and remove suspicious files**  
+  → Monitor the uploads folder, a common location for hacker backdoors.
 
 ---
 
-## 4. Logging & báo cáo
+## 4. Logging & Reporting
 
-- **Log lại lịch sử kích hoạt/hủy kích hoạt plugin/theme và log login fail**  
-  → Giám sát hành vi admin và truy cập trái phép.
+- **Log all plugin/theme activations, deactivations**  
+  → Monitor admin activities and potential unauthorized access attempts.
 
-- **Tự động quét hằng ngày (cuối ngày) và gửi thông báo qua email để report**  
-  → Cập nhật tình trạng bảo mật định kỳ.
+- **Daily automatic scans and email reporting**  
+  → Keep track of security status on a regular basis.
 
-- **Tự động logout sau một khoảng thời gian**  
-  → Ngăn session bị chiếm đoạt nếu admin quên logout.
+- **Automatic logout after a set period**  
+  → Prevent session hijacking if admin forgets to log out.
 
 ---
+
+## 5. Update plugin

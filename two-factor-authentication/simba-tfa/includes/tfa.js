@@ -33,17 +33,10 @@ jQuery(function ($) {
           ? true
           : false;
 
-      console.log(
-        "Simba TFA: User has OTP enabled: showing OTP field (user_can_trust=" +
-          user_can_trust +
-          ")"
-      );
-
       show_otp_field(form, user_can_trust, user_already_trusted);
 
       return true;
     } else {
-      console.log("Simba TFA: User does not have OTP enabled: submitting form");
       // For some reason, .submit() stopped working with TML 7.x. N.B. Used to do this only for form_type == 2 ("TML shortcode or widget, WP Members, bbPress, Ultimate Membership Pro, WooCommerce or Elementor login form")
       // The un-disabling is for Ultimate Member, which for unknown reasons outputs the login button in a disabled state
       $(form)
@@ -128,26 +121,17 @@ jQuery(function ($) {
           var json_begins = resp.search('{"jsonstarter":"justhere"');
           if (json_begins > -1) {
             if (json_begins > 0) {
-              console.log(
-                "Expected JSON marker found at position: " + json_begins
-              );
               resp = resp.substring(json_begins);
             }
           } else {
-            console.log("Expected JSON marker not found");
-            console.log(resp);
           }
 
           response = JSON.parse(resp);
 
           if (response.hasOwnProperty("php_output")) {
-            console.log("PHP output was returned (follows)");
-            console.log(response.php_output);
           }
 
           if (response.hasOwnProperty("extra_output")) {
-            console.log("Extra output was returned (follows)");
-            console.log(response.extra_output);
           }
 
           if (only_cache_the_results) {
@@ -159,18 +143,10 @@ jQuery(function ($) {
           }
         } catch (err) {
           $("#login").html(resp);
-          console.log("Simba TFA: Error when processing response");
-          console.log(err);
-          console.log(resp);
         }
       },
       error: function (jq_xhr, text_status, error_thrown) {
-        console.log(
-          "Simba TFA: AJAX error: " + error_thrown + ": " + text_status
-        );
-        console.log(jq_xhr);
         if (jq_xhr.hasOwnProperty("responseText")) {
-          console.log(jq_xhr.responseText);
           $(form).append(
             '<p class="error" style="clear:left;">' +
               simba_tfasettings.error +
@@ -409,8 +385,6 @@ jQuery(function ($) {
    * @return Boolean - whether to proceed with the submission or not
    */
   var form_submit_handler = function (e) {
-    console.log("Simba TFA: form submit request");
-
     var form = e.target;
 
     var form_is_gravity_forms =

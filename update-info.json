@@ -1,0 +1,13 @@
+{
+  "name": "ENOSTA AIOS",
+  "version": "1.0.3",
+  "download_url": "https://github.com/huynhlongdev/est-security/releases/download/v1.0.3/est-security.zip",
+  "url": "https://github.com/huynhlongdev/est-security",
+  "author": "Long Huynh",
+  "tested": "6.7",
+  "requires": "6.0",
+  "sections": {
+    "description": "Setup security and scan malware",
+    "changelog": "1.0.2 Fix update plugin"
+  }
+}

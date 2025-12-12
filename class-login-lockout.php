@@ -24,7 +24,6 @@ class WP_Login_Lockout
         // Hooks
         add_action('wp_login', [$this, 'login_success'], 10, 2);
         add_action('wp_login_failed', [$this, 'login_failed']);
-        // add_action('admin_init', [$this, 'reset_attempts_after_login']);
         add_filter('login_errors', [$this, 'filter_login_error']);
         add_filter('authenticate', [$this, 'block_when_locked'], 30, 3);
 
@@ -235,12 +234,14 @@ class WP_Login_Lockout
 
         $link = home_url("/?reset=$ip");
         $reset_ip = sprintf(
-            'This IP has been permanently blocked.<a href="%s">Reset IP</a>',
+            'This IP has been permanently blocked.<a href="%s">Reset IP</a>
+            <div><label>Request reset IP</label><input type="text" placeholder="Your email"/></div>
+            ',
             esc_url($link)
         );
 
         if ($ip_blocked_count >= 4) {
-            $this->set_error_message($username, __("This IP has been permanently blocked1.", 'est-security'));
+            $this->set_error_message($username, __("This IP has been permanently blocked.", 'est-security'));
             return new WP_Error('est_ip_blocked', $reset_ip);
         }
 
@@ -249,7 +250,7 @@ class WP_Login_Lockout
 
         // If permanently blocked
         if (intval($row->lockout_count) >= 2 || intval($row->locked_time) === PHP_INT_MAX) {
-            $this->set_error_message($username, __("Your IP has been permanently blocked3.", 'est-security'));
+            $this->set_error_message($username, __("Your IP has been permanently blocked.", 'est-security'));
             return new WP_Error('est_blocked', $reset_ip);
         }
 
@@ -284,3 +285,135 @@ class WP_Login_Lockout
 }
 
 $lockout = new WP_Login_Lockout();
+
+add_action('login_head', 'est_custom_header_login');
+function est_custom_header_login()
+{
+
+    global $wpdb;
+    $ip = EST_Security_Helpers::get_client_ip();
+    if (empty($ip)) return;
+
+    $table = $wpdb->prefix . 'est_security_login_lockout';
+
+    $ip_blocked_count = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE login_ip = %s",
+            $ip
+        )
+    );
+
+    if ($ip_blocked_count < 4) return;
+
+?>
+    <style>
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: #fff;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup_box {
+            border: 1px solid #ededed;
+            padding: 20px;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: 0 0 8px 0px #d5d5d5;
+
+            h2 {
+                text-align: center;
+                margin-bottom: 15px;
+                border-bottom: 1px solid #b5b5b5;
+                padding-bottom: 15px;
+            }
+
+            strong {
+                margin-bottom: 8px;
+                display: block;
+            }
+
+            input {
+                font-size: initial !important;
+            }
+
+            p.notice {
+                font-size: 16px;
+                margin-bottom: 15px;
+                border: 1px solid #ffb300;
+                padding: 4px;
+                border-left: 4px solid #ffb300;
+                border-radius: 0;
+                background: #fff0cc;
+            }
+        }
+
+        .reset_btn {
+            float: none !important;
+        }
+    </style>
+    <div class='popup'>
+        <div class='popup_box'>
+            <h2>Request reset IP address</h2>
+
+            <p class="notice">This IP has been permanently blocked.</p>
+            <!-- <strong for="">Email</strong> -->
+            <input type="text" class="reset_ip" placeholder="Email" name="reset_ip">
+            <input class="submit button button-primary reset_btn" type="submit" value="Submit">
+            <p class="rest_msg" style="color:red; margin-top:10px;"></p>
+        </div>
+    </div>
+    <script>
+        jQuery(document).ready(function($) {
+            $('.reset_btn').on('click', function() {
+                var email = $('.reset_ip').val();
+                if (email === '') {
+                    $('.rest_msg').text('Please enter your email.');
+                    return;
+                }
+
+                // Gửi yêu cầu AJAX để xử lý reset IP
+                $.post('<?php echo admin_url('admin-ajax.php'); ?>', {
+                    action: 'request_reset_ip',
+                    email: email
+                }, function(response) {
+                    if (response.success) {
+                        $('.rest_msg').css('color', 'green').text('Reset request sent successfully.');
+                    } else {
+                        $('.rest_msg').text('Failed to send reset request.');
+                    }
+                });
+            });
+        });
+    </script>
+<?php
+}
+
+// AJAX handler for reset IP request
+add_action('wp_ajax_nopriv_request_reset_ip', 'handle_request_reset_ip');
+function handle_request_reset_ip()
+{
+    $email = sanitize_email($_POST['email'] ?? '');
+
+    if (empty($email) || !is_email($email)) {
+        wp_send_json_error('Invalid email address');
+    }
+
+    // Here you can implement the logic to handle the reset request,
+    // such as sending an email to the admin or logging the request.
+    $admin_email = get_option('admin_email');
+    $subject = 'IP Reset Request';
+    $message = sprintf(
+        "An IP reset request has been received.\n\nEmail: %s\n\nPlease review and process this request accordingly.",
+        esc_html($email)
+    );
+    wp_mail($admin_email, $subject, $message);
+
+    wp_send_json_success('Reset request received');
+}
