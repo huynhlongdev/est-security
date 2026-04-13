@@ -41,7 +41,7 @@ if (!class_exists('Simba_Two_Factor_Authentication_Plugin')):
 			$link = $this->get_settings_link();
 			array_unshift($links, $link);
 
-			$link2 = '<a href="admin.php?page=two-factor-auth-user">' . __('User settings', 'est-security') . '</a>';
+			$link2 = '<a href="admin.php?page=two-factor-auth-user">User settings</a>';
 			array_unshift($links, $link2);
 
 			return $links;
@@ -54,7 +54,7 @@ if (!class_exists('Simba_Two_Factor_Authentication_Plugin')):
 		 */
 		private function get_settings_link()
 		{
-			return '<a href="' . admin_url('options-general.php') . '?page=two-factor-auth">' . __('Plugin settings', 'est-security') . '</a>';
+			return '<a href="' . admin_url('options-general.php') . '?page=two-factor-auth">Plugin settings</a>';
 		}
 
 		/**
@@ -83,8 +83,8 @@ if (!class_exists('Simba_Two_Factor_Authentication_Plugin')):
 		public function menu_entry_for_admin()
 		{
 			add_options_page(
-				__('Two Factor Authentication', 'est-security'),
-				__('Two Factor Authentication', 'est-security'),
+				'Two Factor Authentication',
+				'Two Factor Authentication',
 				$this->get_management_capability(),
 				'two-factor-auth',
 				array($this, 'show_admin_settings_page')

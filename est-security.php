@@ -4,6 +4,7 @@ Plugin Name: ENOSTA AIOS
 Description: Setup security and scan malware
 Version: 1.0.1
 Author: Long Huynh
+Text Domain: est-security
 */
 
 define('EST_SECURITY_VERSION', '1.0.0');
@@ -25,7 +26,7 @@ require_once EST_SECURITY_PLUGIN_DIR . 'class-prefix-db.php';
 require_once EST_SECURITY_PLUGIN_DIR . 'two-factor-authentication/two-factor-login.php';
 require_once __DIR__  . '/class-plugin-updater.php';
 
-new EST_Security_Updater(__FILE__);
+
 
 // Thêm link Settings vào trang plugin
 add_filter('plugin_action_links_' . plugin_basename(__FILE__), function ($links) {
@@ -145,11 +146,15 @@ if (!function_exists('simba_two_factor_authentication_activation')) {
             // We should not prevent activation if either the AIOS plugin is active.
             if ($is_2fa_plugin_active) {
                 if (file_exists(__DIR__ . '/simba-tfa/premium/loader.php')) {
-                    wp_die(esc_html__('To activate Two Factor Authentication Premium, first de-activate the free version (only one can be active at once).', 'two-factor-authentication'));
+                    wp_die('To activate Two Factor Authentication Premium, first de-activate the free version (only one can be active at once).');
                 } else { // If the 2FA Premium plugin is active and tries to activate the 2FA Free Plugin, it throws a fatal error and stops activating the free version.
-                    wp_die(esc_html__("You can't activate Two Factor Authentication (Free) because Two Factor Authentication Premium is active (only one can be active at once).", 'two-factor-authentication'));
+                    wp_die("You can't activate Two Factor Authentication (Free) because Two Factor Authentication Premium is active (only one can be active at once).");
                 }
             }
         }
     }
 }
+
+add_action('plugins_loaded', function () {
+    $updater = new EST_Security_Updater(__FILE__);
+});

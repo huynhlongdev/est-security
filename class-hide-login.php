@@ -26,6 +26,8 @@ class WP_Hide_Login_Forbidden
         add_filter('logout_url', [$this, 'custom_logout_url'], 10, 2);
         add_action('parse_request', [$this, 'handle_logout'], 999);
 
+        // add_filter('login_url', [$this, 'custom_login_url_for_postpass'], 10, 2);
+
         // CHECK session timeout
         $est_user_auto_logout = get_option('est_user_auto_logout', 1);
         $est_auto_logout_time = get_option('est_auto_logout_time', 2);
@@ -34,6 +36,17 @@ class WP_Hide_Login_Forbidden
             add_action('init', [$this, 'check_session_timeout']);
             add_action('wp_login', [$this, 'set_login_time'], 10, 2);
         }
+    }
+
+    function custom_login_url_for_postpass($login_url, $redirect)
+    {
+        // error_log('custom_login_url_for_postpass');
+        // Kiểm tra nếu là yêu cầu đăng nhập cho action=postpass
+        if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'postpass') {
+            // Thay đổi URL đăng nhập mặc định thành custom login slug (ví dụ: /cm-start)
+            $login_url = home_url($this->login_slug);
+        }
+        return $login_url;
     }
 
     public function set_login_time($user_login, $user)
@@ -67,6 +80,8 @@ class WP_Hide_Login_Forbidden
     public function load_custom_login()
     {
         $request_uri = $_SERVER['REQUEST_URI'];
+
+        // error_log('load_custom_login');
 
         // Parse URL để lấy path
         $parsed_url = parse_url($request_uri);
@@ -117,8 +132,8 @@ class WP_Hide_Login_Forbidden
             status_header(403);
             nocache_headers();
             wp_die(
-                __('Sorry, you are not allowed to access this page.'),
-                __('Access Denied'),
+                'Sorry, you are not allowed to access this page.',
+                'Access Denied',
                 ['response' => 403]
             );
             exit;
@@ -128,22 +143,8 @@ class WP_Hide_Login_Forbidden
     // Chặn truy cập wp-login.php
     public function block_wp_login_direct()
     {
-        // $req = trim($_SERVER['REQUEST_URI'], '/');
-        // if ($req === $this->login_slug) return;
 
-        // // Cho phép AJAX login
-        // // if (strpos($req, 'admin-ajax.php') !== false) {
-        // //     return;
-        // // }
-        // if (defined('DOING_AJAX') && DOING_AJAX) {
-        //     return;
-        // }
-
-        // // Allow calling admin-ajax directly
-        // if (isset($_SERVER['SCRIPT_NAME']) && strpos($_SERVER['SCRIPT_NAME'], 'admin-ajax.php') !== false) {
-        //     return;
-        // }
-
+        // error_log('block_wp_login_direct');
         $req = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
 
         // Nếu là custom login → OK
@@ -177,8 +178,8 @@ class WP_Hide_Login_Forbidden
         status_header(403);
         nocache_headers();
         wp_die(
-            __('Sorry, you are not allowed to access this page.'),
-            __('Access Denied'),
+            'Sorry, you are not allowed to access this page.',
+            'Access Denied',
             ['response' => 403]
         );
         exit;
@@ -187,6 +188,7 @@ class WP_Hide_Login_Forbidden
     // Custom link logout
     public function custom_logout_url($logout_url, $redirect)
     {
+        // error_log('custom_logout_url');
         return add_query_arg([
             'est_action' => 'logout',
             '_wpnonce'   => wp_create_nonce('est_logout'),
@@ -267,19 +269,19 @@ function est_verify_captcha()
 
     if (empty($input)) {
         wp_send_json_error([
-            'message' => __('Please enter the captcha.', 'est-plugin')
+            'message' => 'Please enter the captcha.'
         ]);
     }
 
     if (!isset($_SESSION['wp_limit_captcha'])) {
         wp_send_json_error([
-            'message' => __('Captcha does not exist.', 'est-plugin')
+            'message' => 'Captcha does not exist.'
         ]);
     }
 
     if (strtolower($input) !== strtolower($_SESSION['wp_limit_captcha'])) {
         wp_send_json_error([
-            'message' => __('Incorrect captcha.', 'est-plugin')
+            'message' => 'Incorrect captcha.'
         ]);
     }
 
@@ -293,7 +295,7 @@ function est_verify_captcha()
     setcookie('est_captcha_verified', '1', $expire, $path, $domain, $secure, $httponly);
 
     wp_send_json_success([
-        'message' => __('Verification successful.', 'est-plugin')
+        'message' => 'Verification successful.'
     ]);
 }
 add_action('wp_ajax_est_verify_captcha', 'est_verify_captcha');
@@ -334,7 +336,7 @@ function wp_limit_login_head()
                 btn.addEventListener("click", function() {
                     let value = document.querySelector(".captcha_input").value.trim();
 
-                    msg.innerHTML = "<?php echo esc_js(__('Checking...', 'est-plugin')); ?>";
+                    msg.innerHTML = "<?php echo esc_js('Checking...'); ?>";
 
                     fetch("<?php echo admin_url('admin-ajax.php'); ?>", {
                             method: "POST",

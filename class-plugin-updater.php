@@ -43,7 +43,7 @@ class EST_Security_Updater
             return $transient;
         }
 
-        error_log('>>>Transient:' . print_r($transient, true));
+        // error_log('>>>Transient before:' . print_r($transient, true));
 
         $response = wp_remote_get($this->update_url, [
             'timeout' => 15,
@@ -72,6 +72,8 @@ class EST_Security_Updater
                 'requires'    => '5.0'
             ];
         }
+
+        // error_log('>>>Transient after:' . print_r($transient, true));
 
         return $transient;
     }

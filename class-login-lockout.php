@@ -200,10 +200,10 @@ class WP_Login_Lockout
         }
 
         if (strpos($error, 'validate reCAPTCHA')) {
-            return __("You have not completed the reCAPTCHA verification.", 'est-security');
+            return "You have not completed the reCAPTCHA verification.";
         }
         if (strpos($error, 'Incorrect reCAPTCHA')) {
-            return __("Incorrect reCAPTCHA.", 'est-security');
+            return "Incorrect reCAPTCHA.";
         }
 
         // Prevent username enumeration - generic error message
@@ -212,11 +212,11 @@ class WP_Login_Lockout
             strpos($error, 'Unknown username') !== false ||
             strpos($error, 'incorrect username') !== false
         ) {
-            return __('Invalid username or password.', 'est-security');
+            return 'Invalid username or password.';
         }
 
         // Nếu không có thông báo custom thì hiển thị chung chung
-        return __('Invalid username or password.', 'est-security');
+        return 'Invalid username or password.';
     }
 
     public function block_when_locked($user, $username, $password)
@@ -241,7 +241,7 @@ class WP_Login_Lockout
         );
 
         if ($ip_blocked_count >= 4) {
-            $this->set_error_message($username, __("This IP has been permanently blocked.", 'est-security'));
+            $this->set_error_message($username, "This IP has been permanently blocked.");
             return new WP_Error('est_ip_blocked', $reset_ip);
         }
 
@@ -250,15 +250,15 @@ class WP_Login_Lockout
 
         // If permanently blocked
         if (intval($row->lockout_count) >= 2 || intval($row->locked_time) === PHP_INT_MAX) {
-            $this->set_error_message($username, __("Your IP has been permanently blocked.", 'est-security'));
+            $this->set_error_message($username, "Your IP has been permanently blocked.");
             return new WP_Error('est_blocked', $reset_ip);
         }
 
         // If currently locked temporarily
         if (intval($row->locked_time) > time()) {
             $remain = ceil((intval($row->locked_time) - time()) / 60);
-            $this->set_error_message($username, sprintf(__("Too many attempts. Try again in %d minutes.", 'est-security'), $remain));
-            return new WP_Error('est_locked', sprintf(__("Too many attempts. Try again in %d minutes.", 'est-security'), $remain));
+            $this->set_error_message($username, sprintf("Too many attempts. Try again in %d minutes.", $remain));
+            return new WP_Error('est_locked', sprintf("Too many attempts. Try again in %d minutes.", $remain));
         }
 
         return $user;

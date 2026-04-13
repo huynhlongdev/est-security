@@ -55,7 +55,7 @@ class Simba_TFA_Frontend
 				} else {
 
 					if (!isset($posted_settings['tfa_enable_current']) || '' == $posted_settings['tfa_enable_current']) {
-						$return_array['message'] = __('To enable TFA, you must enter the current code.', 'est-security');
+						$return_array['message'] = 'To enable TFA, you must enter the current code.';
 						$return_array['error'] = 'code_absent';
 					} else {
 						// Third parameter: don't allow emergency codes
@@ -63,7 +63,7 @@ class Simba_TFA_Frontend
 							$allow_enable_or_disable = true;
 						} else {
 							$return_array['error'] = 'code_wrong';
-							$return_array['message'] = apply_filters('simba_tfa_message_code_incorrect', __('The TFA code you entered was incorrect.', 'est-security'));
+							$return_array['message'] = apply_filters('simba_tfa_message_code_incorrect', 'The TFA code you entered was incorrect.');
 						}
 					}
 				}
@@ -87,7 +87,7 @@ class Simba_TFA_Frontend
 	public function tfa_algorithm_info($algorithm_type)
 	{
 		$al_type_disp = strtoupper($algorithm_type);
-		$al_type_desc = ($algorithm_type == 'totp' ? __('a time based', 'est-security') : __('an event based', 'est-security'));
+		$al_type_desc = ($algorithm_type == 'totp' ? 'a time based' : 'an event based');
 
 		return array('disp' => $al_type_disp, 'desc' => $al_type_desc);
 	}
@@ -118,7 +118,7 @@ class Simba_TFA_Frontend
 			'url' => $url,
 			'tfa_priv_key_64' => $tfa_priv_key_64,
 			'tfa_priv_key' => $tfa_priv_key,
-			'emergency_str' => '<em>' . __('No emergency codes left. Sorry.', 'est-security') . '</em>',
+			'emergency_str' => '<em>' . 'No emergency codes left. Sorry.' . '</em>',
 			'algorithm_type' => $algorithm_type
 		), $totp_controller, $current_user);
 	}
@@ -128,7 +128,7 @@ class Simba_TFA_Frontend
 	 */
 	public function save_settings_button()
 	{
-		echo '<button style="margin-left: 4px;margin-bottom: 10px" class="simbatfa_settings_save button button-primary">' . __('Save Settings', 'est-security') . '</button>';
+		echo '<button style="margin-left: 4px;margin-bottom: 10px" class="simbatfa_settings_save button button-primary">' . 'Save Settings' . '</button>';
 	}
 
 	/**
@@ -143,7 +143,7 @@ class Simba_TFA_Frontend
 ?>
 		<div class="simbatfa_frontend_settings_box tfa_settings_form">
 			<p><?php $this->mother->paint_enable_tfa_radios($current_user->ID, true, $style); ?></p>
-			<button style="margin-left: 4px; margin-bottom: 10px;" class="button button-primary simbatfa_settings_save"><?php _e('Save Settings', 'est-security'); ?></button>
+			<button style="margin-left: 4px; margin-bottom: 10px;" class="button button-primary simbatfa_settings_save"><?php echo 'Save Settings'; ?></button>
 		</div>
 <?php
 	}
@@ -174,12 +174,12 @@ class Simba_TFA_Frontend
 		}
 
 		$localize = array(
-			'ask' => __('You have unsaved settings.', 'est-security'),
-			'saving' => __('Saving...', 'est-security'),
+			'ask' => 'You have unsaved settings.',
+			'saving' => 'Saving...',
 			'ajax_url' => $ajax_url,
 			'also_try' => $also_try,
 			'nonce' => wp_create_nonce('tfa_frontend_nonce'),
-			'response' => __('Response:', 'est-security'),
+			'response' => 'Response:',
 		);
 
 		wp_localize_script('simba-tfa-frontend-settings', 'simba_tfa_frontend', $localize);

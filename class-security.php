@@ -179,7 +179,7 @@ class EST_Security
     function delete_php_files_ajax()
     {
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Permission denied.', DOMAIN));
+            wp_send_json_error('Permission denied.');
         }
         check_ajax_referer('delete_php_files', 'delete_php_files_nonce');
         $base_dir = wp_upload_dir()['basedir'];
@@ -210,12 +210,12 @@ class EST_Security
 
         if ($deleted > 0) {
             wp_send_json_success([
-                'message' => sprintf(esc_html__('%d PHP files were deleted.', DOMAIN), $deleted),
+                'message' => sprintf('%d PHP files were deleted.', $deleted),
                 'remaining_files' => $respone
             ]);
         } else {
             wp_send_json_error([
-                'message' => esc_html__('No PHP files were deleted.', DOMAIN),
+                'message' => 'No PHP files were deleted.',
                 'remaining_files' => ""
             ]);
         }
@@ -227,19 +227,19 @@ class EST_Security
         $debug_log = WP_CONTENT_DIR . '/debug.log';
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('You do not have permission to perform this action.', DOMAIN));
+            wp_send_json_error('You do not have permission to perform this action.');
             exit;
         }
 
         if (!file_exists($debug_log)) {
-            wp_send_json_error(__('debug.log does not exist.', DOMAIN));
+            wp_send_json_error('debug.log does not exist.');
             exit;
         }
 
         if (@unlink($debug_log)) {
-            wp_send_json_success(__('debug.log deleted successfully.', DOMAIN));
+            wp_send_json_success('debug.log deleted successfully.');
         } else {
-            wp_send_json_error(sprintf(__('Could not delete debug.log. Please check file permissions at: %s', DOMAIN), esc_html($debug_log)));
+            wp_send_json_error(sprintf('Could not delete debug.log. Please check file permissions at: %s', esc_html($debug_log)));
         }
 
         exit;
@@ -285,7 +285,7 @@ class EST_Security
         }
 
         if (!is_user_logged_in()) {
-            return new WP_Error('rest_not_logged_in', __('You must be logged in to access the REST API.', DOMAIN), array('status' => 401));
+            return new WP_Error('rest_not_logged_in', 'You must be logged in to access the REST API.', array('status' => 401));
         }
 
         return $result;
@@ -308,7 +308,7 @@ class EST_Security
         // Nếu không có UA → có thể là request độc hại
         if (empty($ua)) {
             status_header(403);
-            wp_die(__('Forbidden: Empty User-Agent is not allowed.', 'domain'), 'Forbidden', ['response' => 403]);
+            wp_die('Forbidden: Empty User-Agent is not allowed.', 'Forbidden', ['response' => 403]);
         }
 
         // Danh sách UA bị chặn
@@ -351,7 +351,7 @@ class EST_Security
             if (strpos($ua, $bad) !== false) {
                 status_header(403);
                 nocache_headers();
-                wp_die(__('Forbidden: Suspicious user-agent detected.', 'domain'), 'Forbidden', ['response' => 403]);
+                wp_die('Forbidden: Suspicious user-agent detected.', 'Forbidden', ['response' => 403]);
             }
         }
     }

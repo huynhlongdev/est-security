@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) die('No direct access.');
 if (!$is_activated_for_user) {
 
 	global $current_user;
-	echo empty($current_user->ID) ? '(' . esc_html__('Not logged in.', 'est-security') . ')' : esc_html__('Two factor authentication is not available for your user.', 'est-security');
+	echo empty($current_user->ID) ? '(Not logged in)' : 'Two factor authentication is not available for your user.';
 } else {
 
 ?>

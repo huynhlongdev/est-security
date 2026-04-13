@@ -154,9 +154,9 @@ class Simba_Two_Factor_Authentication
 	final public function show_user_profile($user)
 	{
 		if ($user->ID !== get_current_user_id() || !$this->is_activated_for_user($user->ID)) return;
-		echo '<h2>' . __('Two Factor Authentication', 'est-security') . '</h2>';
+		echo '<h2>' . 'Two Factor Authentication' . '</h2>';
 		$settings_url = admin_url('admin.php') . '?page=' . $this->get_user_settings_page_slug();
-		printf('<a target="_blank" href="%s">%s</a>', $settings_url, __('Go here for your two factor authentication settings...', 'est-security'));
+		printf('<a target="_blank" href="%s">%s</a>', $settings_url, 'Go here for your two factor authentication settings...');
 	}
 
 	/**
@@ -176,7 +176,7 @@ class Simba_Two_Factor_Authentication
 				'twofactor-gutenberg-blocks',
 				'tfa_trans',
 				array(
-					'block_title' => __('Two Factor Authentication Settings', 'est-security'),
+					'block_title' => 'Two Factor Authentication Settings',
 				)
 			);
 		}
@@ -301,7 +301,7 @@ class Simba_Two_Factor_Authentication
 	 */
 	public function manage_users_columns_tfa($columns = array())
 	{
-		$columns['tfa-status'] = __('2FA', 'est-security');
+		$columns['tfa-status'] = '2FA';
 		return $columns;
 	}
 
@@ -324,10 +324,10 @@ class Simba_Two_Factor_Authentication
 				$value = '&#8212;';
 			} elseif ($this->is_activated_by_user($user_id)) {
 				// Use value.
-				$value = '<span title="' . __('Enabled', 'est-security') . '" class="dashicons dashicons-yes"></span>';
+				$value = '<span title="' . 'Enabled' . '" class="dashicons dashicons-yes"></span>';
 			} else {
 				// No group.
-				$value = '<span title="' . __('Disabled', 'est-security') . '" class="dashicons dashicons-no"></span>';
+				$value = '<span title="' . 'Disabled' . '" class="dashicons dashicons-no"></span>';
 			}
 		}
 
@@ -1004,7 +1004,7 @@ class Simba_Two_Factor_Authentication
 				$ret = $code_ok;
 			} elseif (!$code_ok) {
 				$additional =  '';
-				$ret =  new WP_Error('authentication_failed', '<strong>' . __('Error:', 'est-security') . '</strong> ' . apply_filters('simba_tfa_message_code_incorrect', __('The one-time password (TFA code) you entered was incorrect.', 'est-security') . $additional));
+				$ret =  new WP_Error('authentication_failed', '<strong>' . 'Error:' . '</strong> ' . apply_filters('simba_tfa_message_code_incorrect', 'The one-time password (TFA code) you entered was incorrect.' . $additional));
 				if (is_a($user, 'WP_User')) $this->log_incorrect_tfa_code_attempt($user);
 			} elseif ($user) {
 				$ret = $user;
@@ -1156,15 +1156,15 @@ class Simba_Two_Factor_Authentication
 	 */
 	private function notify_incorrect_tfa_code_attempts($user_info, $user_email)
 	{
-		$subject = __('Incorrect TFA code attempts', 'est-security');
-		$email_msg = sprintf(__('There has been an incorrect TFA code entered for logging in to your account %s.', 'est-security'), $user_info['username']) . "\n\n" .
-			__('Attempts', 'est-security') . "\n\n";
+		$subject = 'Incorrect TFA code attempts';
+		$email_msg = sprintf('There has been an incorrect TFA code entered for logging in to your account %s.', $user_info['username']) . "\n\n" .
+			'Attempts' . "\n\n";
 		foreach ($user_info['attempts'] as $index => $attempt) {
-			$email_msg .= ($index + 1) . '. ' . wp_date('F j, Y g:i a', $attempt['activity_time'], wp_timezone()) . ' ' . __('from', 'est-security') . ' ' . $attempt['ip_address'] . "\n";
+			$email_msg .= ($index + 1) . '. ' . wp_date('F j, Y g:i a', $attempt['activity_time'], wp_timezone()) . ' ' . 'from' . ' ' . $attempt['ip_address'] . "\n";
 		}
-		$email_msg .= "\n" . __('If the above attempts were not by you then someone else has your password.', 'est-security') . "\n" .
-			__('TFA codes are checked only after the password has been successfully checked.', 'est-security') . "\n\n" .
-			__('Please change your password urgently.', 'est-security') . "\n";
+		$email_msg .= "\n" . 'If the above attempts were not by you then someone else has your password.' . "\n" .
+			'TFA codes are checked only after the password has been successfully checked.' . "\n\n" .
+			'Please change your password urgently.' . "\n";
 		$mail_sent = wp_mail($user_email, $subject, $email_msg);
 	}
 
@@ -1251,20 +1251,20 @@ class Simba_Two_Factor_Authentication
 
 		if ($is_required) {
 			$require_after = absint($this->get_option('tfa_requireafter'));
-			echo '<p class="tfa_required_warning" style="font-weight:bold; font-style:italic;">' . sprintf(__('N.B. This site is configured to forbid you to log in if you disable two-factor authentication after your account is %d days old', 'est-security'), $require_after) . '</p>';
+			echo '<p class="tfa_required_warning" style="font-weight:bold; font-style:italic;">' . sprintf('N.B. This site is configured to forbid you to log in if you disable two-factor authentication after your account is %d days old', $require_after) . '</p>';
 		}
 
-		$tfa_enabled_label = $long_label ? __('Enable two-factor authentication', 'est-security') : __('Enabled', 'est-security');
+		$tfa_enabled_label = $long_label ? 'Enable two-factor authentication' : 'Enabled';
 
 		if ('show_current' == $style) {
-			$tfa_enabled_label .= ' ' . sprintf(__('(Current code: %s)', 'est-security'), $this->get_controller('totp')->current_otp_code($user_id));
+			$tfa_enabled_label .= ' ' . sprintf('(Current code: %s)', $this->get_controller('totp')->current_otp_code($user_id));
 		} elseif ('require_current' == $style) {
-			$tfa_enabled_label .= ' ' . sprintf(__('(you must enter the current code: %s)', 'est-security'), '<input type="text" class="tfa_enable_current" name="tfa_enable_current" size="6" style="height">');
+			$tfa_enabled_label .= ' ' . sprintf('(you must enter the current code: %s)', '<input type="text" class="tfa_enable_current" name="tfa_enable_current" size="6" style="height">');
 		}
 
 		$show_disable = ((is_multisite() && is_super_admin()) || (!is_multisite() && current_user_can($this->get_management_capability())) || false == $is_activated || !$is_required || !$this->get_option('tfa_hide_turn_off')) ? true : false;
 
-		$tfa_disabled_label = $long_label ? __('Disable two-factor authentication', 'est-security') : __('Disabled', 'est-security');
+		$tfa_disabled_label = $long_label ? 'Disable two-factor authentication' : 'Disabled';
 
 		if ('require_current' == $style) echo '<input type="hidden" name="require_current" value="1">' . "\n";
 
@@ -1397,7 +1397,7 @@ class Simba_Two_Factor_Authentication
 		$user_code = isset($params['two_factor_code']) ? str_replace(' ', '', trim($params['two_factor_code'])) : '';
 
 		// This condition in theory should not be possible
-		if (!$user_id) return new WP_Error('tfa_user_not_found', apply_filters('simbatfa_tfa_user_not_found', '<strong>' . __('Error:', 'est-security') . '</strong> ' . __('The indicated user could not be found.', 'est-security')));
+		if (!$user_id) return new WP_Error('tfa_user_not_found', apply_filters('simbatfa_tfa_user_not_found', '<strong>' . 'Error:' . '</strong> ' . 'The indicated user could not be found.'));
 
 		if (!$this->is_activated_for_user($user_id)) return 1;
 
@@ -1433,7 +1433,7 @@ class Simba_Two_Factor_Authentication
 
 			if ($account_age > $require_after && apply_filters('simbatfa_enforce_require_after_check', $enforce_require_after_check, $user_id, $require_after, $account_age)) {
 
-				return new WP_Error('tfa_required', apply_filters('simbatfa_notfa_forbidden_login', '<strong>' . __('Error:', 'est-security') . '</strong> ' . __('The site owner has forbidden you to login without two-factor authentication. Please contact the site owner to re-gain access.', 'est-security')));
+				return new WP_Error('tfa_required', apply_filters('simbatfa_notfa_forbidden_login', '<strong>' . 'Error:' . '</strong> ' . 'The site owner has forbidden you to login without two-factor authentication. Please contact the site owner to re-gain access.'));
 			}
 
 			return 1;
@@ -1447,7 +1447,7 @@ class Simba_Two_Factor_Authentication
 			// In this case, we require that different user to have TFA active - so that this mechanism can't be used to avoid TFA
 
 			if (!$this->is_activated_for_user($tfa_creds_user_id) || !$this->is_activated_by_user($tfa_creds_user_id)) {
-				return new WP_Error('tfa_required', apply_filters('simbatfa_notfa_forbidden_login_altuser', '<strong>' . __('Error:', 'est-security') . '</strong> ' . __('You are attempting to log in to an account that has two-factor authentication enabled; this requires you to also have two-factor authentication enabled on the account whose credentials you are using.', 'est-security')));
+				return new WP_Error('tfa_required', apply_filters('simbatfa_notfa_forbidden_login_altuser', '<strong>' . 'Error:' . '</strong> ' . 'You are attempting to log in to an account that has two-factor authentication enabled; this requires you to also have two-factor authentication enabled on the account whose credentials you are using.'));
 			}
 		}
 
@@ -1522,16 +1522,24 @@ class Simba_Two_Factor_Authentication
 
 		$localize = array(
 			'ajaxurl' => $this->get_ajax_url(),
-			'click_to_enter_otp' => __("Click to enter One Time Password", 'est-security'),
-			'enter_username_first' => __('You have to enter a username first.', 'est-security'),
-			'otp' => __('One Time Password (i.e. 2FA)', 'est-security'),
-			'otp_login_help' => __('(check your OTP app to get this password)', 'est-security'),
-			'mark_as_trusted' => sprintf(_n('Trust this device (allow login without 2FA for %d day)', 'Trust this device (allow login without TFA for %d days)', $trusted_for, 'est-security'), $trusted_for),
-			'is_trusted' => __('(Trusted device - no OTP code required)', 'est-security'),
+			'click_to_enter_otp' => "Click to enter One Time Password",
+			'enter_username_first' => 'You have to enter a username first.',
+			'otp' => 'One Time Password (i.e. 2FA)',
+			'otp_login_help' => '(check your OTP app to get this password)',
+			'mark_as_trusted' => sprintf(
+				_n(
+					'Trust this device (allow login without 2FA for %d day)',
+					'Trust this device (allow login without 2FA for %d days)',
+					$trusted_for,
+					'simba-two-factor-auth'
+				),
+				$trusted_for
+			),
+			'is_trusted' => 'Trusted device - no OTP code required',
 			'nonce' => wp_create_nonce('simba_tfa_loginform_nonce'),
 			'login_form_selectors' => '',
 			'login_form_off_selectors' => '',
-			'error' => __('An error has occurred. Site owners can check the JavaScript console for more details.', 'est-security'),
+			'error' => 'An error has occurred. Site owners can check the JavaScript console for more details.',
 		);
 
 		// Spinner exists since WC 3.8. Use the proper functions to avoid SSL warnings.
@@ -1592,7 +1600,7 @@ class Simba_Two_Factor_Authentication
 
 		if (!file_exists($template_file)) {
 			error_log("TFA: template not found: $template_file (from $path)");
-			echo __('Error:', 'est-security') . ' ' . __('Template path not found:', 'est-security') . " (" . htmlspecialchars($path) . ")";
+			echo 'Error:' . ' ' . 'Template path not found:' . " (" . htmlspecialchars($path) . ")";
 		} else {
 			extract($extract_these);
 			// The following are useful variables which can be used in the template.

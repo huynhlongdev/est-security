@@ -112,15 +112,15 @@ class EST_Two_Factor
 
 ?>
         <div class="login">
-            <h1><?php _e('Two-Factor Authentication'); ?></h1>
+            <h1>Two-Factor Authentication</h1>
             <form method="post" action="<?php echo esc_url(wp_login_url() . '?action=2fa'); ?>">
                 <?php wp_nonce_field('est_2fa_verify', 'est_2fa_nonce'); ?>
                 <p>
-                    <label><?php _e('Enter 6-digit code:'); ?></label>
+                    <label><?php echo ('Enter 6-digit code:'); ?></label>
                     <input type="text" name="2fa_code" class="input" size="20" autocomplete="off" autofocus>
                 </p>
                 <p>
-                    <label><?php _e('Or backup code:'); ?></label>
+                    <label><?php echo ('Or backup code:'); ?></label>
                     <input type="text" name="backup_code" class="input" size="20" autocomplete="off">
                 </p>
                 <input type="hidden" name="token" value="<?php echo esc_attr($token); ?>">

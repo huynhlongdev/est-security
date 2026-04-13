@@ -42,7 +42,7 @@ class EST_Recaptcha
     public function enqueue()
     {
         if ($this->version === 'v2') {
-            wp_enqueue_script('google-recaptcha', 'https://www.google.com/recaptcha/api.js', [], null, true);
+            wp_enqueue_script('google-recaptcha', 'https://www.google.com/recaptcha/api.js?hl=' . get_locale(), [], null, true);
         } else {
             wp_enqueue_script(
                 'google-recaptcha-v3',
@@ -66,7 +66,7 @@ class EST_Recaptcha
         // error_log(print_r($username . '---' . $password, true));
         $result = $this->verify_recaptcha();
         if ($result !== true) {
-            $err = new WP_Error('recaptcha_error', '<strong>Lỗi reCAPTCHA:</strong> ' . $result);
+            $err = new WP_Error('recaptcha_error', '<strong>Error reCAPTCHA:</strong> ' . $result);
             if (session_status() !== PHP_SESSION_ACTIVE) {
                 @session_start();
             }
@@ -89,7 +89,7 @@ class EST_Recaptcha
     {
         $result = $this->verify_recaptcha();
         if ($result !== true) {
-            wp_die('reCAPTCHA không hợp lệ: ' . $result);
+            wp_die('Invalid reCAPTCHA: ' . $result);
         }
         return $commentdata;
     }
@@ -105,7 +105,7 @@ class EST_Recaptcha
     {
         $verify = $this->verify_recaptcha();
         if ($verify !== true) {
-            $result->invalidate('', 'Lỗi xác thực reCAPTCHA: ' . $verify);
+            $result->invalidate('', 'reCAPTCHA verification error: ' . $verify);
         }
         return $result;
     }
@@ -165,7 +165,7 @@ class EST_Recaptcha
 new EST_Recaptcha();
 
 /**
- * Shortcode CF7 thủ công
+ * Shortcode CF7
  * Chèn vào form: [recaptcha-html]
  */
 add_shortcode('recaptcha-html', function () {
